@@ -30,145 +30,67 @@ return new class extends Migration {
             $table->nullableTimestamps();
         });
 
-        // Create menus table
-        Schema::create('menus', function (Blueprint $table) {
+
+        Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->nullable();
-            $table->string('url')->nullable();
-            $table->integer('priority')->default(0)->nullable();
-            $table->unsignedBigInteger('parent_id')->nullable();
-            $table->nullableTimestamps();
-            $table->foreign('parent_id')->references('id')->on('menus')->onDelete("cascade");
+            $table->string('name');
+            $table->integer('count')->default(0);
+            $table->timestamps();
         });
 
-        // Create provinces table
-        Schema::create('provinces', function (Blueprint $table) {
+        Schema::create('news', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->nullable();
-            $table->enum('type', ['thanhpho', 'tinh'])->nullable();
-            $table->string('title')->nullable();
-            $table->string('description')->nullable();
-            $table->string('thumbnail')->nullable();
-            $table->json('images')->nullable();
-            $table->longText('detail')->nullable();
-            $table->integer('priority')->default(0)->nullable();
-            $table->string('slug')->nullable();
-            $table->nullableTimestamps();
+            $table->string('slug')->unique();
+            $table->string('title');
+            $table->string('thumbnail');
+            $table->string('author');
+            $table->integer('view')->default(0);
+            $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
+            $table->longText('content');
+            $table->timestamps();
         });
 
-        // Create districts table
-        Schema::create('districts', function (Blueprint $table) {
+        Schema::create('trainings', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('province_id')->nullable();
-            $table->string('name')->nullable();
-            $table->enum('type', ['quan', 'huyen', 'thanhpho', 'thixa', 'benxe', 'sanbay', 'diadiemdulich'])->nullable();
-            $table->string('title')->nullable();
-            $table->string('description')->nullable();
-            $table->string('thumbnail')->nullable();
-            $table->json('images')->nullable();
-            $table->longText('detail')->nullable();
-            $table->integer('priority')->default(0)->nullable();
-            $table->string('slug')->nullable();
-            $table->nullableTimestamps();
-            $table->foreign('province_id')->references('id')->on('provinces')->onDelete('cascade');
+            $table->string('slug')->unique();
+            $table->string('title');
+            $table->string('age');
+            $table->longText('description');
+            $table->string('thumbnail');
+            $table->string('duration');
+            $table->string('outcome');
+            $table->string('method');
+            $table->text('speaking');
+            $table->text('listening');
+            $table->text('reading');
+            $table->text('writing');
+            $table->text('curriculum')->nullable();
+            $table->timestamps();
         });
 
-        // Create routes table
-        Schema::create('routes', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('province_id_start')->nullable();
-            $table->unsignedBigInteger('province_id_end')->nullable();
-            $table->string('title')->nullable();
-            $table->string('description')->nullable();
-            $table->string('thumbnail')->nullable();
-            $table->json('images')->nullable();
-            $table->integer('distance')->nullable();
-            $table->string('duration')->nullable();
-            $table->integer('start_price')->nullable();
-            $table->longText('detail')->nullable();
-            $table->integer('priority')->default(0)->nullable();
-            $table->string('slug')->nullable();
-            $table->nullableTimestamps();
-            $table->foreign('province_id_start')->references('id')->on('provinces')->onDelete('cascade');
-            $table->foreign('province_id_end')->references('id')->on('provinces')->onDelete('cascade');
-        });
-
-        // Create buses table
-        Schema::create('buses', function (Blueprint $table) {
-            $table->id();
-            $table->string('title')->nullable();
-            $table->text('description')->nullable();
-            $table->string('thumbnail')->nullable();
-            $table->json('images')->nullable();
-            $table->string('name')->nullable();
-            $table->string('model_name')->nullable();
-            $table->enum('type', ['sleeper', 'cabin', 'doublecabin', 'limousine'])->nullable();
-            $table->integer('number_of_seats')->nullable();
-            $table->json('services')->nullable();
-            $table->integer('floors')->nullable();
-            $table->integer('seat_row_number')->nullable();
-            $table->integer('seat_column_number')->nullable();
-            $table->longText('detail')->nullable();
-            $table->integer('priority')->default(0)->nullable();
-            $table->string('slug')->nullable();
-            $table->nullableTimestamps();
-        });
-
-        // Create stops table (REVISED)
-        Schema::create('stops', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('route_id')->nullable(); // Foreign key to routes table
-            $table->unsignedBigInteger('district_id')->nullable();
-            $table->string('title')->nullable(); // e.g., "Văn phòng ABC", "Ngã tư Sở"
-            $table->nullableTimestamps();
-
-            $table->foreign('route_id')->references('id')->on('routes')->onDelete('cascade');
-            $table->foreign('district_id')->references('id')->on('districts')->onDelete('cascade');
-        });
-
-        // Create bus_routes table
-        Schema::create('bus_routes', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('bus_id')->nullable();
-            $table->unsignedBigInteger('route_id')->nullable();
-            $table->string('title')->nullable();
-            $table->string('description')->nullable();
-            $table->time('start_at')->nullable();
-            $table->time('end_at')->nullable();
-            $table->unsignedBigInteger('price')->default(0)->nullable();
-            $table->text('detail')->nullable();
-            $table->integer('priority')->default(0)->nullable();
-            $table->string('slug')->nullable();
-            $table->nullableTimestamps();
-            $table->foreign('bus_id')->references('id')->on('buses')->onDelete('cascade');
-            $table->foreign('route_id')->references('id')->on('routes')->onDelete('cascade');
-        });
-
-        // Create customers table
         Schema::create('customers', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('fullname')->nullable();
-            $table->string('email')->unique()->nullable();
-            $table->string('phone')->nullable();
-            $table->string('address')->nullable();
-            $table->string('password')->nullable();
-            $table->boolean('is_registered')->default(false)->nullable();
-            $table->nullableTimestamps();
+            $table->id();
+            $table->foreignId('training_id')->nullable()->constrained('trainings')->onDelete('set null');
+            $table->string('full_name_parent');
+            $table->string('phone', 10);
+            $table->string('email', 50);
+            $table->string('full_name_children');
+            $table->date('date_of_birth');
+            $table->text('address');
+            $table->longText('note')->nullable();
+            $table->timestamps();
         });
 
-        // Create bookings table
-        Schema::create('bookings', function (Blueprint $table) {
+        Schema::create('teachers', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('customer_id')->nullable();
-            $table->unsignedBigInteger('bus_route_id')->nullable();
-            $table->date('booking_date')->nullable();
-            $table->json('seats')->nullable();
-            $table->enum('status', ['pending', 'confirmed', 'cancelled', 'completed'])->default('pending')->nullable();
-            $table->enum('payment_method', ['online', 'offline'])->default('offline')->nullable();
-            $table->enum('payment_status', ['paid', 'unpaid'])->default('unpaid')->nullable();
-            $table->nullableTimestamps();
-            $table->foreign('customer_id')->references('id')->on('customers')->onDelete('cascade');
-            $table->foreign('bus_route_id')->references('id')->on('bus_routes')->onDelete('cascade');
+            $table->string('full_name');
+            $table->string('role');
+            $table->text('qualifications');
+            $table->string('avatar');
+            $table->string('facebook');
+            $table->string('email', 50)->unique();
+            $table->longText('description')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -177,15 +99,11 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('bookings');
+        Schema::dropIfExists('categories');
+        Schema::dropIfExists('news');
+        Schema::dropIfExists('trainings');
         Schema::dropIfExists('customers');
-        Schema::dropIfExists('stops');
-        Schema::dropIfExists('bus_routes');
-        Schema::dropIfExists('buses');
-        Schema::dropIfExists('routes');
-        Schema::dropIfExists('districts');
-        Schema::dropIfExists('provinces');
-        Schema::dropIfExists('menus');
+        Schema::dropIfExists('teachers');
         Schema::dropIfExists('web_info');
     }
 };
