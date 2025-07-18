@@ -39,3 +39,18 @@ Route::any('/ckfinder/connector', '\CKSource\CKFinderBridge\Controller\CKFinderC
 
 Route::any('/ckfinder/browser', '\CKSource\CKFinderBridge\Controller\CKFinderController@browserAction')
     ->name('ckfinder_browser');
+
+// api routes
+Route::get('/api/homepage', [AdminController::class, 'getHomePageApi']);
+Route::get('/api/categories', [CategoryController::class, 'getCategories']);
+Route::get('/api/categories/{categorySlug}/news', [CategoryController::class, 'getNewsByCategorySlug']);
+Route::get('/api/news', [NewsController::class, 'getNewsList']);
+Route::get('/api/news/{slug}', [NewsController::class, 'getNewsDetailBySlug']);
+Route::post('/api/customers', [CustomerController::class, 'store']);
+// Training APIs
+Route::get('/api/training', [TrainingController::class, 'getTrainingListApi']);
+Route::get('/api/training/{slug}', [TrainingController::class, 'getTrainingDetailApi']);
+
+// Teacher APIs
+Route::get('/api/teachers', [TeacherController::class, 'getTeacherListApi']);
+Route::get('/api/teachers/{slug}', [TeacherController::class, 'getTeacherDetailApi']);

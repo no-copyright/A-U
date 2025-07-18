@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Throwable;
+use Illuminate\Http\JsonResponse;
 
 class NewsController extends Controller
 {
@@ -164,5 +165,96 @@ class NewsController extends Controller
         }
 
         return redirect()->route('admin.news.index')->with('success', 'Tin tức đã được xóa thành công!');
+    }
+
+
+    public function getNewsList(Request $request): JsonResponse
+    {
+        // Bạn có thể tùy chỉnh số lượng item mỗi trang ở đây
+        $pageSize = $request->query('pageSize', 10); 
+
+        // Sử dụng paginate() của Laravel để tự động xử lý phân trang
+        $paginator = DB::table('news')
+            ->join('categories', 'news.category_id', '=', 'categories.id')
+            ->select(
+                'news.id',
+                'news.title',
+                'news.slug',
+                'news.thumbnail',
+                'news.author',
+                'news.view',
+                'news.created_at',
+                'categories.name as category_name',
+                'categories.slug as category_slug'
+            )
+            ->orderBy('news.created_at', 'desc')
+            ->paginate($pageSize);
+            
+        // Chuyển đổi collection data để có URL đầy đủ cho thumbnail
+        $transformedNews = $paginator->getCollection()->map(function ($newsItem) {
+            if (!empty($newsItem->thumbnail)) {
+                $newsItem->thumbnail = url($newsItem->thumbnail);
+            }
+            return $newsItem;
+        });
+
+        // Xây dựng cấu trúc response cuối cùng theo đúng yêu cầu
+        return response()->json([
+            'success' => true,
+            'currentPage' => $paginator->currentPage(),
+            'totalPages' => $paginator->lastPage(),
+            'totalElements' => $paginator->total(),
+            'pageSize' => $paginator->perPage(),
+            'data' => $transformedNews,
+        ]);
+    }
+
+
+
+    public function getNewsDetailBySlug(string $slug): JsonResponse
+    {
+        // Tìm bài viết theo slug
+        $news = DB::table('news')
+            ->join('categories', 'news.category_id', '=', 'categories.id')
+            ->select(
+                'news.id',
+                'news.title',
+                'news.slug',
+                'news.thumbnail',
+                'news.author',
+                'news.view',
+                'news.content', // Lấy thêm trường nội dung
+                'news.created_at',
+                'news.updated_at',
+                'categories.name as category_name',
+                'categories.slug as category_slug'
+            )
+            ->where('news.slug', $slug)
+            ->first();
+
+        // Nếu không tìm thấy, trả về lỗi 404
+        if (!$news) {
+            return response()->json([
+                'success' => false,
+                'message' => 'News not found.'
+            ], 404);
+        }
+
+        // Tăng lượt xem (view count) của bài viết lên 1
+        DB::table('news')->where('id', $news->id)->increment('view');
+
+        // Cập nhật lại số view trong đối tượng trả về
+        $news->view += 1;
+        
+        // Chuyển đổi URL cho thumbnail
+        if (!empty($news->thumbnail)) {
+            $news->thumbnail = url($news->thumbnail);
+        }
+
+        // Trả về dữ liệu chi tiết
+        return response()->json([
+            'success' => true,
+            'data' => $news
+        ]);
     }
 }

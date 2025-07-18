@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
+use Illuminate\Http\JsonResponse;
 
 class CategoryController extends Controller
 {
@@ -115,5 +116,69 @@ class CategoryController extends Controller
         DB::table('categories')->where('id', $id)->delete();
 
         return redirect()->route('admin.categories.index')->with('success', 'Danh mục đã được xóa thành công!');
+    }
+
+    public function getCategories(): JsonResponse
+    {
+        $categories = DB::table('categories')
+            ->select('id', 'name', 'slug', 'count')
+            ->orderBy('name', 'asc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $categories
+        ]);
+    }
+
+
+        public function getNewsByCategorySlug(Request $request, string $categorySlug): JsonResponse
+    {
+        $category = DB::table('categories')->where('slug', $categorySlug)->first();
+        
+        if (!$category) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Category not found.'
+            ], 404);
+        }
+
+        $pageSize = $request->query('pageSize', 10);
+
+        // SỬA LẠI CÁC TRƯỜNG SELECT: Bỏ đi category_name và category_slug
+        $paginator = DB::table('news')
+            ->where('category_id', $category->id) // Lọc trực tiếp bằng category_id sẽ hiệu quả hơn
+            ->select(
+                'id',
+                'title',
+                'slug',
+                'thumbnail',
+                'author',
+                'view',
+                'created_at'
+            )
+            ->orderBy('created_at', 'desc')
+            ->paginate($pageSize);
+
+        $transformedNews = $paginator->getCollection()->map(function ($newsItem) {
+            if (!empty($newsItem->thumbnail)) {
+                $newsItem->thumbnail = url($newsItem->thumbnail);
+            }
+            return $newsItem;
+        });
+        
+        return response()->json([
+            'success' => true,
+            'category' => [
+                'id' => $category->id,
+                'name' => $category->name,
+                'slug' => $category->slug,
+            ],
+            'currentPage' => $paginator->currentPage(),
+            'totalPages' => $paginator->lastPage(),
+            'totalElements' => $paginator->total(),
+            'pageSize' => $paginator->perPage(),
+            'data' => $transformedNews,
+        ]);
     }
 }

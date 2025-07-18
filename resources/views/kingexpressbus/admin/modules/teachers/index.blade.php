@@ -19,7 +19,7 @@
                     <th>ID</th>
                     <th>Ảnh đại diện</th>
                     <th>Họ và tên</th>
-                    <th>Vai trò</th>
+                    <th>Quốc tịch</th>
                     <th>Slug</th> {{-- <--- THÊM CỘT MỚI --}}
                     <th>Email</th>
                     <th>Hành động</th>

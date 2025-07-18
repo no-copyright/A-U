@@ -7,6 +7,7 @@ use App\Http\Traits\SlugGenerator; // <-- THÊM DÒNG NÀY
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Http\JsonResponse;
 
 class TrainingController extends Controller
 {
@@ -136,5 +137,55 @@ class TrainingController extends Controller
         DB::table('trainings')->where('id', $id)->delete();
 
         return redirect()->route('admin.training.index')->with('success', 'Khoá đào tạo đã được xóa thành công!');
+    }
+
+
+    public function getTrainingListApi(Request $request): JsonResponse
+    {
+        $pageSize = $request->query('pageSize', 10);
+
+        $paginator = DB::table('trainings')
+            ->select('id', 'title', 'slug', 'age', 'description', 'thumbnail', 'duration')
+            ->orderBy('title', 'asc')
+            ->paginate($pageSize);
+        
+        $transformedData = $paginator->getCollection()->map(function ($training) {
+            if (!empty($training->thumbnail)) {
+                $training->thumbnail = url($training->thumbnail);
+            }
+            return $training;
+        });
+
+        return response()->json([
+            'success' => true,
+            'currentPage' => $paginator->currentPage(),
+            'totalPages' => $paginator->lastPage(),
+            'totalElements' => $paginator->total(),
+            'pageSize' => $paginator->perPage(),
+            'data' => $transformedData,
+        ]);
+    }
+
+    /**
+     * API: Lấy thông tin chi tiết của một khoá đào tạo theo slug.
+     */
+    public function getTrainingDetailApi(string $slug): JsonResponse
+    {
+        $training = DB::table('trainings')->where('slug', $slug)->first();
+
+        if (!$training) {
+            return response()->json(['success' => false, 'message' => 'Training not found.'], 404);
+        }
+        
+        // Chuyển đổi URL thumbnail
+        if (!empty($training->thumbnail)) {
+            $training->thumbnail = url($training->thumbnail);
+        }
+
+        // Decode các trường JSON nếu có (ví dụ: curriculum)
+        // Trong schema hiện tại, các trường này là text, nếu bạn đổi sang JSON, hãy bỏ comment
+        // $training->curriculum = json_decode($training->curriculum, true);
+
+        return response()->json(['success' => true, 'data' => $training]);
     }
 }

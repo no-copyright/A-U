@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
 use Throwable;
 
 class AdminController extends Controller
@@ -31,7 +32,7 @@ class AdminController extends Controller
                 'link_youtubes' => [],
             ];
         }
-        
+
         return view('kingexpressbus.admin.modules.dashboard.edit', ['homePage' => $homePageData]);
     }
 
@@ -67,7 +68,7 @@ class AdminController extends Controller
             'fags.*.answer' => 'câu trả lời',
             'link_youtubes.*' => 'link youtube',
         ]);
-        
+
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
@@ -86,12 +87,66 @@ class AdminController extends Controller
                 ['id' => 1],
                 $dataToUpdate
             );
-            
         } catch (Throwable $e) {
             Log::error("Error updating homepage: " . $e->getMessage());
             return back()->with('error', 'Đã xảy ra lỗi khi cập nhật trang chủ.')->withInput();
         }
-        
+
         return redirect()->route('admin.dashboard.index')->with('success', 'Cập nhật thông tin trang chủ thành công!');
+    }
+
+
+
+
+    public function getHomePageApi(): JsonResponse
+    {
+        $homePage = DB::table('home_page')->first();
+
+        if (!$homePage) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Homepage data not found.'
+            ], 404);
+        }
+
+        $banners = json_decode($homePage->banners, false) ?? (object)['title' => '', 'description' => '', 'images' => []];
+        $stats = json_decode($homePage->stats, true) ?? [];
+        $images = json_decode($homePage->images, true) ?? [];
+
+
+        if (!empty($banners->images) && is_array($banners->images)) {
+            $banners->images = array_map(function ($path) {
+                return url($path);
+            }, $banners->images);
+        }
+
+        if (!empty($stats) && is_array($stats)) {
+            $stats = array_map(function ($stat) {
+                if (!empty($stat['images'])) {
+                    $stat['images'] = url($stat['images']);
+                }
+                return $stat;
+            }, $stats);
+        }
+
+        if (!empty($images) && is_array($images)) {
+            $images = array_map(function ($path) {
+                return url($path);
+            }, $images);
+        }
+
+        $data = [
+            'banners' => $banners,
+            'stats' => $stats,
+            'fags' => json_decode($homePage->fags, true) ?? [],
+            'images' => $images,
+            'link_youtubes' => json_decode($homePage->link_youtubes, true) ?? [],
+        ];
+
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
     }
 }

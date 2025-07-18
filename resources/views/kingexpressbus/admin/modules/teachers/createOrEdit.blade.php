@@ -38,7 +38,7 @@ $isEdit = !empty($teacher?->id);
                     <x-inputs.text label="Họ và tên" name="full_name" :value="old('full_name', $teacher?->full_name)" required />
                 </div>
                 <div class="col-md-6">
-                    <x-inputs.text label="Vai trò (Vd: Giáo viên, Trợ giảng)" name="role" :value="old('role', $teacher?->role)" required />
+                    <x-inputs.text label="Quốc tịch" name="role" :value="old('role', $teacher?->role)" required />
                 </div>
             </div>
 
@@ -53,7 +53,7 @@ $isEdit = !empty($teacher?->id);
                 </div>
             </div>
 
-            <x-inputs.text-area label="Bằng cấp, Chứng chỉ (Qualifications)" name="qualifications" :value="old('qualifications', $teacher?->qualifications)" required />
+            <x-inputs.text-area label="Bằng cấp, Chứng chỉ (ngăn cách nhau bởi dấu ',' ví dụ: toeic, ielts)" name="qualifications" :value="old('qualifications', $teacher?->qualifications)" required />
 
             <x-inputs.editor label="Mô tả thêm về giáo viên (Tiểu sử, kinh nghiệm,...)" name="description" :value="old('description', $teacher?->description)" />
 

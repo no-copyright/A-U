@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
+use Illuminate\Http\JsonResponse;
 
 class TeacherController extends Controller
 {
@@ -127,5 +128,68 @@ class TeacherController extends Controller
         DB::table('teachers')->where('id', $id)->delete();
 
         return redirect()->route('admin.teachers.index')->with('success', 'Thông tin giáo viên đã được xóa thành công!');
+    }
+
+    public function getTeacherListApi(Request $request): JsonResponse
+    {
+        $pageSize = $request->query('pageSize', 10);
+
+        $paginator = DB::table('teachers')
+            ->select('id', 'full_name', 'slug', 'role', 'qualifications', 'avatar')
+            ->orderBy('full_name', 'asc')
+            ->paginate($pageSize);
+        
+        $transformedData = $paginator->getCollection()->map(function ($teacher) {
+            // Chuyển đổi URL avatar
+            if (!empty($teacher->avatar)) {
+                $teacher->avatar = url($teacher->avatar);
+            }
+            
+            // SỬA LẠI TRƯỜNG QUALIFICATIONS
+            if (!empty($teacher->qualifications)) {
+                // Tách chuỗi bằng dấu ',', sau đó xóa khoảng trắng thừa ở mỗi phần tử
+                $teacher->qualifications = array_map('trim', explode(',', $teacher->qualifications));
+            } else {
+                // Nếu trường này rỗng, trả về một mảng trống
+                $teacher->qualifications = [];
+            }
+
+            return $teacher;
+        });
+
+        return response()->json([
+            'success' => true,
+            'currentPage' => $paginator->currentPage(),
+            'totalPages' => $paginator->lastPage(),
+            'totalElements' => $paginator->total(),
+            'pageSize' => $paginator->perPage(),
+            'data' => $transformedData,
+        ]);
+    }
+
+    /**
+     * API: Lấy thông tin chi tiết của một giáo viên theo slug.
+     */
+    public function getTeacherDetailApi(string $slug): JsonResponse
+    {
+        $teacher = DB::table('teachers')->where('slug', $slug)->first();
+
+        if (!$teacher) {
+            return response()->json(['success' => false, 'message' => 'Teacher not found.'], 404);
+        }
+        
+        // Chuyển đổi URL avatar
+        if (!empty($teacher->avatar)) {
+            $teacher->avatar = url($teacher->avatar);
+        }
+
+        // SỬA LẠI TRƯỜNG QUALIFICATIONS
+        if (!empty($teacher->qualifications)) {
+            $teacher->qualifications = array_map('trim', explode(',', $teacher->qualifications));
+        } else {
+            $teacher->qualifications = [];
+        }
+
+        return response()->json(['success' => true, 'data' => $teacher]);
     }
 }

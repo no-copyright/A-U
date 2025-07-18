@@ -12,10 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: [
-            'ckCsrfToken',
+            'ckCsrfToken'
         ]);
         $middleware->validateCsrfTokens(
-            except: ['ckfinder/*']
+            except: ['ckfinder/*', 'api/*']
         );
     })
     ->withExceptions(function (Exceptions $exceptions) {
