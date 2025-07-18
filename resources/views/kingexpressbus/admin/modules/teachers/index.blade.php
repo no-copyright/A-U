@@ -20,6 +20,7 @@
                     <th>Ảnh đại diện</th>
                     <th>Họ và tên</th>
                     <th>Vai trò</th>
+                    <th>Slug</th> {{-- <--- THÊM CỘT MỚI --}}
                     <th>Email</th>
                     <th>Hành động</th>
                 </tr>
@@ -36,6 +37,7 @@
                         </td>
                         <td>{{ $teacher->full_name }}</td>
                         <td>{{ $teacher->role }}</td>
+                        <td>{{ $teacher->slug }}</td> {{-- <--- THÊM DỮ LIỆU CỘT MỚI --}}
                         <td>{{ $teacher->email }}</td>
                         <td>
                             <a class="btn btn-warning btn-sm"

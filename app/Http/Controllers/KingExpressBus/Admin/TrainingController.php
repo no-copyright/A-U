@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\KingExpressBus\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\SlugGenerator; // <-- THÊM DÒNG NÀY
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class TrainingController extends Controller
 {
+    use SlugGenerator; // <-- SỬ DỤNG TRAIT
+
     /**
      * Display a listing of the resource.
      */
@@ -33,7 +36,7 @@ class TrainingController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
+            'title' => 'required|string|max:255,title',
             'age' => 'required|string|max:255',
             'description' => 'required|string',
             'thumbnail' => 'required|string|max:255',
@@ -47,18 +50,20 @@ class TrainingController extends Controller
             'curriculum' => 'nullable|string',
         ]);
 
-        $baseSlug = Str::slug($validated['title']);
-        $slug = $baseSlug;
-        $counter = 1;
-        while (DB::table('trainings')->where('slug', $slug)->exists()) {
-            $slug = $baseSlug . '-' . $counter++;
-        }
-        $validated['slug'] = $slug;
-
         $validated['created_at'] = now();
         $validated['updated_at'] = now();
-
-        DB::table('trainings')->insert($validated);
+        
+        // === LOGIC TẠO SLUG MỚI (Đã thay đổi) ===
+        // 1. Tạo slug tạm
+        $validated['slug'] = Str::slug($validated['title']);
+        
+        // 2. Insert để lấy ID
+        $id = DB::table('trainings')->insertGetId($validated);
+        
+        // 3. Tạo slug cuối cùng và update
+        $finalSlug = $this->generateSlug($validated['title'], $id);
+        DB::table('trainings')->where('id', $id)->update(['slug' => $finalSlug]);
+        // ===========================================
 
         return redirect()->route('admin.training.index')->with('success', 'Khoá đào tạo đã được tạo thành công!');
     }
@@ -86,7 +91,7 @@ class TrainingController extends Controller
         }
 
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
+            'title' => 'required|string|max:255|unique:trainings,title,' . $id,
             'age' => 'required|string|max:255',
             'description' => 'required|string',
             'thumbnail' => 'required|string|max:255',
@@ -100,15 +105,11 @@ class TrainingController extends Controller
             'curriculum' => 'nullable|string',
         ]);
 
+        // === LOGIC CẬP NHẬT SLUG MỚI (Đã thay đổi) ===
         if ($training->title !== $validated['title']) {
-            $baseSlug = Str::slug($validated['title']);
-            $slug = $baseSlug;
-            $counter = 1;
-            while (DB::table('trainings')->where('slug', $slug)->where('id', '!=', $id)->exists()) {
-                $slug = $baseSlug . '-' . $counter++;
-            }
-            $validated['slug'] = $slug;
+            $validated['slug'] = $this->generateSlug($validated['title'], $id);
         }
+        // ===========================================
 
         $validated['updated_at'] = now();
 

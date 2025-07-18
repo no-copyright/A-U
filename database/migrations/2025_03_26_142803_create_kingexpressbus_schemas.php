@@ -10,30 +10,10 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        // Create web_info table
-        Schema::create('web_info', function (Blueprint $table) {
-            $table->id();
-            $table->string('logo')->nullable();
-            $table->string('title')->nullable();
-            $table->text('description')->nullable();
-            $table->string('email')->nullable();
-            $table->string('phone')->nullable();
-            $table->string('hotline')->nullable();
-            $table->string('phone_detail')->nullable();
-            $table->string('web_link')->nullable();
-            $table->string('facebook')->nullable();
-            $table->string('zalo')->nullable();
-            $table->string('address')->nullable();
-            $table->text('map')->nullable();
-            $table->longText('policy')->nullable();
-            $table->text('detail')->nullable();
-            $table->nullableTimestamps();
-        });
-
-
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('slug')->unique();
             $table->integer('count')->default(0);
             $table->timestamps();
         });
@@ -87,9 +67,20 @@ return new class extends Migration {
             $table->string('role');
             $table->text('qualifications');
             $table->string('avatar');
+            $table->string('slug')->unique();
             $table->string('facebook');
             $table->string('email', 50)->unique();
             $table->longText('description')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('home_page', function (Blueprint $table) {
+            $table->id();
+            $table->string('banners')->unique();
+            $table->text('stats')->nullable();
+            $table->text('fags')->nullable();
+            $table->text('images')->nullable();
+            $table->string('link_youtubes')->unique();
             $table->timestamps();
         });
     }
@@ -104,6 +95,5 @@ return new class extends Migration {
         Schema::dropIfExists('trainings');
         Schema::dropIfExists('customers');
         Schema::dropIfExists('teachers');
-        Schema::dropIfExists('web_info');
     }
 };

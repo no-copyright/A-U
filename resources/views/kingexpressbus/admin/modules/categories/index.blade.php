@@ -18,6 +18,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Tên Danh mục</th>
+                    <th>Slug</th> {{-- <--- THÊM CỘT MỚI --}}
                     <th>Số lượng tin tức</th>
                     <th>Hành động</th>
                 </tr>
@@ -27,6 +28,7 @@
                     <tr>
                         <td>{{ $category->id }}</td>
                         <td>{{ $category->name }}</td>
+                        <td>{{ $category->slug }}</td> {{-- <--- THÊM DỮ LIỆU CỘT MỚI --}}
                         <td>{{ $category->count }}</td>
                         <td>
                             <a class="btn btn-warning btn-sm"

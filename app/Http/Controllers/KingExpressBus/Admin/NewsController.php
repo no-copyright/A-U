@@ -3,14 +3,16 @@
 namespace App\Http\Controllers\KingExpressBus\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\SlugGenerator; // <-- BƯỚC 1: Thêm Trait đã tạo
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
-use Throwable; // Import Throwable để bắt lỗi trong transaction
+use Throwable;
 
 class NewsController extends Controller
 {
+    use SlugGenerator; // <-- BƯỚC 2: Sử dụng Trait trong Controller
+
     /**
      * Display a listing of the resource.
      */
@@ -41,7 +43,7 @@ class NewsController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
+            'title' => 'required|string|max:255,title',
             'thumbnail' => 'required|string|max:255',
             'author' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
@@ -50,22 +52,22 @@ class NewsController extends Controller
 
         try {
             DB::transaction(function () use ($validated) {
-                // Tạo slug
-                $baseSlug = Str::slug($validated['title']);
-                $slug = $baseSlug;
-                $counter = 1;
-                while (DB::table('news')->where('slug', $slug)->exists()) {
-                    $slug = $baseSlug . '-' . $counter++;
-                }
-                $validated['slug'] = $slug;
-
                 $validated['created_at'] = now();
                 $validated['updated_at'] = now();
 
-                // 1. Thêm tin tức mới vào bảng 'news'
-                DB::table('news')->insert($validated);
+                // === LOGIC TẠO SLUG MỚI (Đã thay đổi) ===
+                // 1. Tạm thời tạo slug rỗng hoặc từ title để insert trước
+                $validated['slug'] = Str::slug($validated['title']);
 
-                // 2. Cập nhật số lượng trong bảng 'categories'
+                // 2. Thêm tin tức vào DB để lấy về ID
+                $id = DB::table('news')->insertGetId($validated);
+
+                // 3. Tạo slug cuối cùng với ID và cập nhật lại bản ghi
+                $finalSlug = $this->generateSlug($validated['title'], $id);
+                DB::table('news')->where('id', $id)->update(['slug' => $finalSlug]);
+                // ===========================================
+
+                // Cập nhật số lượng bài viết trong danh mục tương ứng
                 DB::table('categories')->where('id', $validated['category_id'])->increment('count');
             });
         } catch (Throwable $e) {
@@ -102,7 +104,7 @@ class NewsController extends Controller
         $old_category_id = $news->category_id;
 
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
+            'title' => 'required|string|max:255|unique:news,title,' . $id, // Thêm unique và ignore id hiện tại
             'thumbnail' => 'required|string|max:255',
             'author' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
@@ -111,16 +113,12 @@ class NewsController extends Controller
         
         try {
             DB::transaction(function () use ($validated, $news, $id, $old_category_id) {
-                // Cập nhật slug nếu tiêu đề thay đổi
+                // === LOGIC CẬP NHẬT SLUG MỚI (Đã thay đổi) ===
+                // Chỉ cập nhật slug nếu tiêu đề thay đổi
                 if ($news->title !== $validated['title']) {
-                    $baseSlug = Str::slug($validated['title']);
-                    $slug = $baseSlug;
-                    $counter = 1;
-                    while (DB::table('news')->where('slug', $slug)->where('id', '!=', $id)->exists()) {
-                        $slug = $baseSlug . '-' . $counter++;
-                    }
-                    $validated['slug'] = $slug;
+                    $validated['slug'] = $this->generateSlug($validated['title'], $id);
                 }
+                // ===========================================
 
                 $validated['updated_at'] = now();
 
@@ -129,7 +127,7 @@ class NewsController extends Controller
 
                 // 2. Cập nhật số lượng nếu danh mục thay đổi
                 if ($old_category_id != $validated['category_id']) {
-                    // Giảm count của danh mục cũ
+                    // Giảm count của danh mục cũ (nếu nó vẫn tồn tại)
                     DB::table('categories')->where('id', $old_category_id)->decrement('count');
                     // Tăng count của danh mục mới
                     DB::table('categories')->where('id', $validated['category_id'])->increment('count');
@@ -158,7 +156,8 @@ class NewsController extends Controller
                 DB::table('news')->where('id', $id)->delete();
 
                 // 2. Giảm số lượng trong bảng 'categories'
-                DB::table('categories')->where('id', $news->category_id)->decrement('count');
+                // Đảm bảo rằng count không bao giờ âm
+                DB::table('categories')->where('id', $news->category_id)->where('count', '>', 0)->decrement('count');
             });
         } catch (Throwable $e) {
             return back()->with('error', 'Đã xảy ra lỗi khi xóa tin tức: ' . $e->getMessage());
