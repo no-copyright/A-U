@@ -4,31 +4,94 @@ namespace App\Http\Controllers\KingExpressBus\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-// Không cần dùng DB hay Validator nữa
-// use Illuminate\Support\Facades\DB;
-// use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Throwable;
 
 class AdminController extends Controller
 {
-    /**
-     * Hiển thị trang dashboard chính.
-     * Logic lấy dữ liệu từ 'web_info' đã được loại bỏ.
-     */
     public function index()
     {
-        // Bây giờ, hàm này chỉ đơn giản trả về một view dashboard trống.
-        // Tôi đã đổi view từ 'dashboard.edit' thành 'dashboard.index' cho hợp lý hơn.
-        return view("kingexpressbus.admin.modules.dashboard.index");
+        $homePageData = DB::table('home_page')->first();
+
+        if ($homePageData) {
+            $homePageData->banners = json_decode($homePageData->banners, false) ?? (object)['title' => '', 'description' => '', 'images' => []];
+            $homePageData->stats = json_decode($homePageData->stats, true) ?? [];
+            $homePageData->fags = json_decode($homePageData->fags, true) ?? [];
+            $homePageData->images = json_decode($homePageData->images, true) ?? [];
+            $homePageData->link_youtubes = json_decode($homePageData->link_youtubes, true) ?? [];
+        } else {
+            $homePageData = (object) [
+                'id' => null,
+                'banners' => (object)['title' => '', 'description' => '', 'images' => []],
+                'stats' => [],
+                'fags' => [],
+                'images' => [],
+                'link_youtubes' => [],
+            ];
+        }
+        
+        return view('kingexpressbus.admin.modules.dashboard.edit', ['homePage' => $homePageData]);
     }
 
-    /**
-     * Hàm này không còn chức năng cập nhật.
-     * Nó chỉ tồn tại để không gây lỗi nếu route POST vẫn còn.
-     */
     public function update(Request $request)
     {
-        // Toàn bộ logic cập nhật 'web_info' đã được loại bỏ.
-        // Chỉ cần chuyển hướng người dùng về trang dashboard chính.
-        return redirect()->route('admin.dashboard.index');
+        $validator = Validator::make($request->all(), [
+            'banners.title' => 'nullable|string|max:255',
+            'banners.description' => 'nullable|string',
+            'banners.images' => 'nullable|array',
+            'banners.images.*' => 'string|max:255',
+
+            'stats' => 'nullable|array',
+            'stats.*.value' => 'required|integer',
+            'stats.*.description' => 'required|string|max:255',
+            'stats.*.images' => 'required|string|max:255',
+
+            'fags' => 'nullable|array',
+            'fags.*.question' => 'required|string|max:255',
+            'fags.*.answer' => 'required|string',
+
+            'images' => 'nullable|array',
+            'images.*' => 'string|max:255',
+
+            'link_youtubes' => 'nullable|array',
+            'link_youtubes.*' => 'string|max:255',
+        ]);
+
+        $validator->setAttributeNames([
+            'stats.*.value' => 'giá trị thống kê',
+            'stats.*.description' => 'mô tả thống kê',
+            'stats.*.images' => 'ảnh thống kê',
+            'fags.*.question' => 'câu hỏi',
+            'fags.*.answer' => 'câu trả lời',
+            'link_youtubes.*' => 'link youtube',
+        ]);
+        
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            $dataToUpdate = [
+                'banners'       => json_encode($request->input('banners', ['title' => '', 'description' => '', 'images' => []])),
+                'stats'         => json_encode($request->input('stats', [])),
+                'fags'          => json_encode($request->input('fags', [])),
+                'images'        => json_encode($request->input('images', [])),
+                'link_youtubes' => json_encode($request->input('link_youtubes', [])),
+                'updated_at'    => now()
+            ];
+
+            DB::table('home_page')->updateOrInsert(
+                ['id' => 1],
+                $dataToUpdate
+            );
+            
+        } catch (Throwable $e) {
+            Log::error("Error updating homepage: " . $e->getMessage());
+            return back()->with('error', 'Đã xảy ra lỗi khi cập nhật trang chủ.')->withInput();
+        }
+        
+        return redirect()->route('admin.dashboard.index')->with('success', 'Cập nhật thông tin trang chủ thành công!');
     }
 }

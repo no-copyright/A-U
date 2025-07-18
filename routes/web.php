@@ -8,7 +8,6 @@ use App\Http\Controllers\KingExpressBus\Admin\NewsController;
 use App\Http\Controllers\KingExpressBus\Admin\TrainingController;
 use App\Http\Controllers\KingExpressBus\Admin\CustomerController;
 use App\Http\Controllers\KingExpressBus\Admin\TeacherController;
-// use App\Http\Controllers\KingExpressBus\Admin\MenuController; // <-- XÓA DÒNG NÀY
 
 // Controller và Middleware cho Auth
 use App\Http\Controllers\KingExpressBus\Auth\AuthenticationController;
@@ -21,8 +20,10 @@ Route::post('/admin/authenticate', [AuthenticationController::class, "authentica
 
 // Admin routes group
 Route::prefix('admin')->name("admin.")->middleware(AuthenticationMiddleware::class)->group(function () {
-    // Dashboard
+    // Dashboard - bây giờ là quản lý trang chủ
     Route::get("/dashboard", [AdminController::class, "index"])->name("dashboard.index");
+    // THÊM ROUTE UPDATE CHO DASHBOARD
+    Route::post("/dashboard/update", [AdminController::class, "update"])->name("dashboard.update");
 
     // Các resource của dự án
     Route::resource("categories", CategoryController::class)->except(['show']);
@@ -30,10 +31,6 @@ Route::prefix('admin')->name("admin.")->middleware(AuthenticationMiddleware::cla
     Route::resource("training", TrainingController::class)->except(['show']);
     Route::resource("customers", CustomerController::class)->only(['index', 'show', 'destroy']);
     Route::resource("teachers", TeacherController::class)->except(['show']);
-    
-    // XÓA CÁC ROUTE CỦA MENU Ở ĐÂY
-    // Route::resource("menus", MenuController::class);
-    // Route::post('/menus/update-order', [MenuController::class, 'updateOrder'])->name('menus.updateOrder');
 });
 
 // CKFinder Plugin routes

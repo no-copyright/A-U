@@ -4,29 +4,28 @@
     </div>
     <div class="card-body">
         <div class="form-group">
-            <label for="input-{{$name}}">{{$label}}</label>
+            <label>Thêm ảnh mới</label>
             <div class="input-group">
-                <input readonly type="text" class="form-control ckfinder-input-{{$name}}" id="input-{{ $name }}"
-                       placeholder="Chọn ảnh">
+                <input readonly type="text" class="form-control" placeholder="Chọn ảnh từ trình duyệt...">
                 <span class="input-group-append">
-                    <button type="button" class="btn btn-secondary ckfinder-popup-{{$name}}"
-                            id="button-popup-{{$name}}">
+                    {{-- Sửa lỗi: Đổi ID thành class để tránh trùng lặp. Truyền $name vào để định danh. --}}
+                    <button type="button" class="btn btn-secondary ckfinder-popup-for-array" data-name="{{ $name }}">
                         Duyệt Ảnh
                     </button>
                 </span>
             </div>
         </div>
 
-        <div id="preview-container-{{ $name }}" class="mt-2">
-            <ul class="list-group" id="list-{{$name}}">
+        <div class="mt-2 image-preview-grid">
+            {{-- Dùng một id duy nhất cho list --}}
+            <ul class="list-unstyled d-flex flex-wrap" id="list-{{ $name }}">
                 @if (is_array($value) && count($value) > 0)
                     @foreach ($value as $item)
-                        <li class="list-group-item d-flex align-items-center justify-content-between">
-                            <img src="{{ $item }}" alt="Image Preview"
-                                 style="max-width: 100px; max-height: 100px; margin-right: 10px;">
+                        <li class="grid-item">
+                            <img src="{{ $item }}" alt="Image Preview">
                             <input type="hidden" name="{{ $name }}[]" value="{{ $item }}">
-                            <button type="button" class="btn btn-danger btn-sm btn-remove-image-{{$name}}"
-                                    data-value="{{ $item }}">Xoá
+                            <button type="button" class="btn btn-danger btn-sm btn-remove-image">
+                                <i class="fas fa-times"></i>
                             </button>
                         </li>
                     @endforeach
@@ -40,54 +39,51 @@
     </div>
 </div>
 
-
-@push("scripts")
+{{-- Script này chỉ chạy một lần và xử lý tất cả các component có trên trang --}}
+@pushonce('scripts')
     <script>
-        let button_popup_{{$name}} = document.getElementById("button-popup-{{$name}}");
-        let list_{{$name}} = document.getElementById("list-{{$name}}");
-        let input_{{$name}} = document.querySelector(".ckfinder-input-{{$name}}");
+        document.addEventListener("DOMContentLoaded", function() {
+            // Dùng event delegation cho tất cả các nút 'Duyệt Ảnh' loại array
+            document.body.addEventListener('click', function(e) {
+                if (e.target && e.target.matches('.ckfinder-popup-for-array')) {
+                    const button = e.target;
+                    const name = button.dataset.name;
+                    const list = document.getElementById(`list-${name}`);
 
-        button_popup_{{$name}}.onclick = async () => {
-            CKFinder.popup({
-                chooseFiles: true,
-                width: 800,
-                height: 600,
-                onInit: function (finder) {
-                    finder.on('files:choose', function (evt) {
-                        let file = evt.data.files.first();
-                        let fullUrl = file.getUrl();
-                        let path;
-                        try {
-                            let urlObj = new URL(fullUrl);
-                            path = urlObj.pathname;
-                        } catch (e) {
-                            path = fullUrl;
+                    if (!list) return;
+
+                    CKFinder.popup({
+                        chooseFiles: true,
+                        multiple: true, // Cho phép chọn nhiều file
+                        onInit: function (finder) {
+                            finder.on('files:choose', function (evt) {
+                                const files = evt.data.files;
+                                files.forEach(function(file) {
+                                    const path = new URL(file.getUrl()).pathname;
+                                    const li = document.createElement('li');
+                                    li.className = 'grid-item';
+                                    li.innerHTML = `
+                                        <img src="${path}" alt="Image Preview">
+                                        <input type="hidden" name="${name}[]" value="${path}">
+                                        <button type="button" class="btn btn-danger btn-sm btn-remove-image">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    `;
+                                    list.appendChild(li);
+                                });
+                            });
                         }
-
-                        let li = document.createElement('li');
-                        li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
-                        li.innerHTML = `<img src="${path}" alt="Image Preview" style="max-width: 100px; max-height: 100px; margin-right: 10px;">
-                                                    <input type="hidden" name="{{ $name }}[]" value="${path}">
-                                                    <button type="button" class="btn btn-danger btn-sm btn-remove-image-{{$name}}" data-value="${path}">Xoá</button>`;
-                        list_{{$name}}.appendChild(li);
-                        input_{{$name}}.value = "";
-                        addRemoveEvent(li.querySelector('.btn-remove-image-{{$name}}'));
-                    });
-                    finder.on('file:choose:resizedImage', function (evt) {
                     });
                 }
             });
-        }
 
-        function addRemoveEvent(removeButton) {
-            removeButton.addEventListener('click', function () {
-                removeButton.closest('li').remove();
+            // Dùng event delegation cho tất cả các nút xóa ảnh
+            document.body.addEventListener('click', function(e) {
+                const removeButton = e.target.closest('.btn-remove-image');
+                if (removeButton && removeButton.closest('.grid-item')) {
+                    removeButton.closest('.grid-item').remove();
+                }
             });
-        }
-
-        // Gán sự kiện xóa cho các nút xóa đã có từ trước
-        list_{{$name}}.querySelectorAll('.btn-remove-image-{{$name}}').forEach(button => {
-            addRemoveEvent(button)
         });
     </script>
-@endpush
+@endpushonce
