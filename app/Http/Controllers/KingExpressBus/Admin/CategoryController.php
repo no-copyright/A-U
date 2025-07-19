@@ -15,11 +15,15 @@ class CategoryController extends Controller
     use SlugGenerator; // <-- THÊM DÒNG NÀY
 
     // ... (Các phương thức index, create, edit không thay đổi)
-    public function index()
+    public function index(Request $request)
     {
-        $categories = DB::table('categories')
-            ->orderBy('name', 'asc')
-            ->get();
+        $query = DB::table('categories');
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->input('search') . '%');
+        }
+
+        $categories = $query->orderBy('name', 'asc')->paginate(10);
 
         return view('kingexpressbus.admin.modules.categories.index', compact('categories'));
     }

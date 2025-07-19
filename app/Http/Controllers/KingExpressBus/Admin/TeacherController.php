@@ -14,9 +14,16 @@ class TeacherController extends Controller
 {
     use SlugGenerator;
 
-    public function index()
+    public function index(Request $request)
     {
-        $teachers = DB::table('teachers')->orderBy('priority', 'asc')->orderBy('full_name', 'asc')->get();
+        $query = DB::table('teachers');
+
+        if ($request->filled('search')) {
+            $query->where('full_name', 'like', '%' . $request->input('search') . '%');
+        }
+
+        $teachers = $query->orderBy('priority', 'asc')->orderBy('full_name', 'asc')->paginate(10);
+
         return view('kingexpressbus.admin.modules.teachers.index', compact('teachers'));
     }
 
@@ -38,13 +45,13 @@ class TeacherController extends Controller
             'email' => 'required|email|unique:teachers,email|max:50',
             'description' => 'nullable|string',
         ]);
-        
+
         $validated['created_at'] = now();
         $validated['updated_at'] = now();
 
         $validated['slug'] = Str::slug($validated['full_name']);
         $id = DB::table('teachers')->insertGetId($validated);
-        
+
         $finalSlug = $this->generateSlug($validated['full_name'], $id);
         DB::table('teachers')->where('id', $id)->update(['slug' => $finalSlug]);
 
@@ -107,39 +114,39 @@ class TeacherController extends Controller
     }
 
     public function getTeacherListApi(Request $request): JsonResponse
-{
-    $pageSize = $request->query('pageSize', 10);
+    {
+        $pageSize = $request->query('pageSize', 10);
 
-    $paginator = DB::table('teachers')
-        // Thêm 'facebook' và 'email' vào đây
-        ->select('id', 'full_name', 'slug', 'role', 'qualifications', 'avatar', 'facebook', 'email')
-        ->orderBy('priority', 'asc')
-        ->orderBy('full_name', 'asc')
-        ->paginate($pageSize);
-    
-    $transformedData = $paginator->getCollection()->map(function ($teacher) {
-        if (!empty($teacher->avatar)) {
-            $teacher->avatar = url($teacher->avatar);
-        }
-        
-        if (!empty($teacher->qualifications)) {
-            $teacher->qualifications = array_map('trim', explode(',', $teacher->qualifications));
-        } else {
-            $teacher->qualifications = [];
-        }
+        $paginator = DB::table('teachers')
+            // Thêm 'facebook' và 'email' vào đây
+            ->select('id', 'full_name', 'slug', 'role', 'qualifications', 'avatar', 'facebook', 'email')
+            ->orderBy('priority', 'asc')
+            ->orderBy('full_name', 'asc')
+            ->paginate($pageSize);
 
-        return $teacher;
-    });
+        $transformedData = $paginator->getCollection()->map(function ($teacher) {
+            if (!empty($teacher->avatar)) {
+                $teacher->avatar = url($teacher->avatar);
+            }
 
-    return response()->json([
-        'success' => true,
-        'currentPage' => $paginator->currentPage(),
-        'totalPages' => $paginator->lastPage(),
-        'totalElements' => $paginator->total(),
-        'pageSize' => $paginator->perPage(),
-        'data' => $transformedData,
-    ]);
-}
+            if (!empty($teacher->qualifications)) {
+                $teacher->qualifications = array_map('trim', explode(',', $teacher->qualifications));
+            } else {
+                $teacher->qualifications = [];
+            }
+
+            return $teacher;
+        });
+
+        return response()->json([
+            'success' => true,
+            'currentPage' => $paginator->currentPage(),
+            'totalPages' => $paginator->lastPage(),
+            'totalElements' => $paginator->total(),
+            'pageSize' => $paginator->perPage(),
+            'data' => $transformedData,
+        ]);
+    }
 
     public function getTeacherDetailApi(string $slug): JsonResponse
     {
@@ -148,7 +155,7 @@ class TeacherController extends Controller
         if (!$teacher) {
             return response()->json(['success' => false, 'message' => 'Teacher not found.'], 404);
         }
-        
+
         if (!empty($teacher->avatar)) {
             $teacher->avatar = url($teacher->avatar);
         }

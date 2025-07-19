@@ -14,9 +14,16 @@ class ParentsCornerController extends Controller
 {
     use SlugGenerator;
 
-    public function index()
+    public function index(Request $request)
     {
-        $reviews = DB::table('parents_corner')->orderBy('priority', 'asc')->orderBy('created_at', 'desc')->get();
+        $query = DB::table('parents_corner');
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->input('search') . '%');
+        }
+
+        $reviews = $query->orderBy('priority', 'asc')->orderBy('created_at', 'desc')->paginate(10);
+
         return view('kingexpressbus.admin.modules.parents_corner.index', compact('reviews'));
     }
 
@@ -40,13 +47,12 @@ class ParentsCornerController extends Controller
         try {
             $validated['created_at'] = now();
             $validated['updated_at'] = now();
-            
+
             $validated['slug'] = Str::slug($validated['name']);
             $id = DB::table('parents_corner')->insertGetId($validated);
 
             $finalSlug = $this->generateSlug($validated['name'], $id);
             DB::table('parents_corner')->where('id', $id)->update(['slug' => $finalSlug]);
-
         } catch (Throwable $e) {
             return back()->with('error', 'Đã xảy ra lỗi khi tạo đánh giá: ' . $e->getMessage())->withInput();
         }
@@ -138,7 +144,7 @@ class ParentsCornerController extends Controller
         if (!$review) {
             return response()->json(['success' => false, 'message' => 'Review not found.'], 404);
         }
-        
+
         if (!empty($review->image)) {
             $review->image = url($review->image);
         }

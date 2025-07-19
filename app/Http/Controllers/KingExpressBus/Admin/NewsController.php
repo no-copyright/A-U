@@ -17,13 +17,20 @@ class NewsController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+
+    public function index(Request $request) // Thêm Request $request
     {
-        $newsItems = DB::table('news')
+        $query = DB::table('news')
             ->leftJoin('categories', 'news.category_id', '=', 'categories.id')
-            ->select('news.*', 'categories.name as category_name')
-            ->orderBy('news.created_at', 'desc')
-            ->get();
+            ->select('news.*', 'categories.name as category_name');
+
+        // *** THÊM MỚI: Logic tìm kiếm theo tiêu đề ***
+        if ($request->filled('search')) {
+            $query->where('news.title', 'like', '%' . $request->input('search') . '%');
+        }
+
+        // *** THAY ĐỔI: Sắp xếp và phân trang ***
+        $newsItems = $query->orderBy('news.created_at', 'desc')->paginate(10);
 
         return view('kingexpressbus.admin.modules.news.index', compact('newsItems'));
     }

@@ -10,9 +10,16 @@ use Throwable;
 
 class DocumentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $documents = DB::table('document')->orderBy('priority', 'asc')->orderBy('name', 'asc')->get();
+        $query = DB::table('document');
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->input('search') . '%');
+        }
+
+        $documents = $query->orderBy('priority', 'asc')->orderBy('name', 'asc')->paginate(10);
+
         return view('kingexpressbus.admin.modules.document.index', compact('documents'));
     }
 

@@ -13,9 +13,18 @@ class TrainingController extends Controller
 {
     use SlugGenerator;
 
-    public function index()
+    public function index(Request $request) // Thêm Request
     {
-        $trainings = DB::table('trainings')->orderBy('priority', 'asc')->orderBy('title', 'asc')->get();
+        $query = DB::table('trainings');
+
+        // Thêm logic tìm kiếm
+        if ($request->filled('search')) {
+            $query->where('title', 'like', '%' . $request->input('search') . '%');
+        }
+
+        // Sắp xếp và phân trang
+        $trainings = $query->orderBy('priority', 'asc')->orderBy('title', 'asc')->paginate(10);
+
         return view('kingexpressbus.admin.modules.training.index', compact('trainings'));
     }
 
@@ -47,12 +56,12 @@ class TrainingController extends Controller
 
         $validated['created_at'] = now();
         $validated['updated_at'] = now();
-        
+
         $validated['curriculum'] = json_encode($request->input('curriculum', []));
-        
+
         $validated['slug'] = Str::slug($validated['title']);
         $id = DB::table('trainings')->insertGetId($validated);
-        
+
         $finalSlug = $this->generateSlug($validated['title'], $id);
         DB::table('trainings')->where('id', $id)->update(['slug' => $finalSlug]);
 
@@ -134,7 +143,7 @@ class TrainingController extends Controller
             ->orderBy('priority', 'asc')
             ->orderBy('title', 'asc')
             ->paginate($pageSize);
-        
+
         $transformedData = $paginator->getCollection()->map(function ($training) {
             if (!empty($training->thumbnail)) {
                 $training->thumbnail = url($training->thumbnail);
@@ -159,7 +168,7 @@ class TrainingController extends Controller
         if (!$training) {
             return response()->json(['success' => false, 'message' => 'Training not found.'], 404);
         }
-        
+
         if (!empty($training->thumbnail)) {
             $training->thumbnail = url($training->thumbnail);
         }

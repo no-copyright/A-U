@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Collection;
+use Illuminate\Pagination\Paginator;
 
 // Thêm Collection để làm việc với kết quả DB dễ dàng hơn
 
@@ -54,11 +55,11 @@ class AppServiceProvider extends ServiceProvider
             // Chia sẻ cấu trúc cây menu ($clientMenuTree) với tất cả các view
             // dưới tên biến là 'clientMenuTreeGlobal'
             View::share('clientMenuTreeGlobal', $clientMenuTree);
-
         } catch (\Exception $e) {
             // Xử lý trường hợp có lỗi khi lấy dữ liệu menu
             // Ghi log lỗi nếu cần: Log::error("Error fetching menus: " . $e->getMessage());
             View::share('clientMenuTreeGlobal', collect()); // Chia sẻ một Collection rỗng nếu có lỗi
+            Paginator::useBootstrapFour();
         }
         // --- Kết thúc xử lý Menu ---
 

@@ -20,38 +20,44 @@ class CustomerController extends Controller
     /**
      * Display a listing of the resource.
      */
+    // app/Http/Controllers/KingExpressBus/Admin/CustomerController.php
+
     public function index(Request $request)
     {
-        // Bắt đầu xây dựng query
         $query = DB::table('customers')
             ->leftJoin('trainings', 'customers.training_id', '=', 'trainings.id')
             ->select('customers.id', 'customers.full_name_parent', 'customers.phone', 'customers.full_name_children', 'customers.created_at', 'trainings.title as training_title', 'customers.status');
 
-        // Lọc theo trạng thái
+        // Lọc theo trạng thái (Giữ nguyên)
         if ($request->filled('status')) {
             $query->where('customers.status', $request->input('status'));
         }
 
-        // Lọc theo khoảng ngày
+        // Lọc theo khoảng ngày (Giữ nguyên)
         if ($request->filled('date_range')) {
             try {
-                // Tách chuỗi ngày bắt đầu và kết thúc
                 $dateParts = explode(' - ', $request->input('date_range'));
                 if (count($dateParts) == 2) {
                     $startDate = \Carbon\Carbon::createFromFormat('d/m/Y', $dateParts[0])->startOfDay();
                     $endDate = \Carbon\Carbon::createFromFormat('d/m/Y', $dateParts[1])->endOfDay();
-                    
-                    // Áp dụng điều kiện lọc vào query
                     $query->whereBetween('customers.created_at', [$startDate, $endDate]);
                 }
             } catch (\Exception $e) {
-                // Bỏ qua nếu định dạng ngày không hợp lệ, có thể log lỗi nếu cần
                 Log::warning('Invalid date format for customer filter: ' . $request->input('date_range'));
             }
         }
 
-        // Lấy kết quả cuối cùng
-        $customers = $query->orderBy('customers.created_at', 'desc')->get();
+        // *** THÊM MỚI: Logic tìm kiếm theo tên phụ huynh hoặc tên học viên ***
+        if ($request->filled('search')) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('customers.full_name_parent', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('customers.full_name_children', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        // *** THAY ĐỔI: Sử dụng paginate thay vì get ***
+        $customers = $query->orderBy('customers.created_at', 'desc')->paginate(10);
 
         return view('kingexpressbus.admin.modules.customers.index', compact('customers'));
     }
