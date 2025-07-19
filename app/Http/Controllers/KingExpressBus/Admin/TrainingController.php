@@ -40,11 +40,15 @@ class TrainingController extends Controller
             'listening' => 'required|string',
             'reading' => 'required|string',
             'writing' => 'required|string',
-            'curriculum' => 'nullable|string',
+            'curriculum' => 'nullable|array',
+            'curriculum.*.module' => 'required_with:curriculum|string|max:255',
+            'curriculum.*.content' => 'required_with:curriculum|string',
         ]);
 
         $validated['created_at'] = now();
         $validated['updated_at'] = now();
+        
+        $validated['curriculum'] = json_encode($request->input('curriculum', []));
         
         $validated['slug'] = Str::slug($validated['title']);
         $id = DB::table('trainings')->insertGetId($validated);
@@ -61,6 +65,9 @@ class TrainingController extends Controller
         if (!$training) {
             abort(404);
         }
+
+        $training->curriculum = json_decode($training->curriculum, true) ?? [];
+
         return view('kingexpressbus.admin.modules.training.createOrEdit', compact('training'));
     }
 
@@ -84,13 +91,16 @@ class TrainingController extends Controller
             'listening' => 'required|string',
             'reading' => 'required|string',
             'writing' => 'required|string',
-            'curriculum' => 'nullable|string',
+            'curriculum' => 'nullable|array',
+            'curriculum.*.module' => 'required_with:curriculum|string|max:255',
+            'curriculum.*.content' => 'required_with:curriculum|string',
         ]);
 
         if ($training->title !== $validated['title']) {
             $validated['slug'] = $this->generateSlug($validated['title'], $id);
         }
 
+        $validated['curriculum'] = json_encode($request->input('curriculum', []));
         $validated['updated_at'] = now();
 
         DB::table('trainings')->where('id', $id)->update($validated);
@@ -153,6 +163,8 @@ class TrainingController extends Controller
         if (!empty($training->thumbnail)) {
             $training->thumbnail = url($training->thumbnail);
         }
+
+        $training->curriculum = json_decode($training->curriculum, true) ?? [];
 
         return response()->json(['success' => true, 'data' => $training]);
     }

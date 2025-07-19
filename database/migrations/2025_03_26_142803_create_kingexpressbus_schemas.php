@@ -42,7 +42,7 @@ return new class extends Migration {
             $table->text('listening');
             $table->text('reading');
             $table->text('writing');
-            $table->text('curriculum')->nullable();
+            $table->longText('curriculum')->nullable();
             $table->timestamps();
         });
 
@@ -76,11 +76,11 @@ return new class extends Migration {
 
         Schema::create('home_page', function (Blueprint $table) {
             $table->id();
-            $table->string('banners')->unique();
+            $table->text('banners')->unique();
             $table->text('stats')->nullable();
             $table->text('fags')->nullable();
             $table->text('images')->nullable();
-            $table->string('link_youtubes')->unique();
+            $table->text('link_youtubes')->unique();
             $table->timestamps();
         });
 

@@ -107,38 +107,39 @@ class TeacherController extends Controller
     }
 
     public function getTeacherListApi(Request $request): JsonResponse
-    {
-        $pageSize = $request->query('pageSize', 10);
+{
+    $pageSize = $request->query('pageSize', 10);
 
-        $paginator = DB::table('teachers')
-            ->select('id', 'full_name', 'slug', 'role', 'qualifications', 'avatar')
-            ->orderBy('priority', 'asc')
-            ->orderBy('full_name', 'asc')
-            ->paginate($pageSize);
+    $paginator = DB::table('teachers')
+        // Thêm 'facebook' và 'email' vào đây
+        ->select('id', 'full_name', 'slug', 'role', 'qualifications', 'avatar', 'facebook', 'email')
+        ->orderBy('priority', 'asc')
+        ->orderBy('full_name', 'asc')
+        ->paginate($pageSize);
+    
+    $transformedData = $paginator->getCollection()->map(function ($teacher) {
+        if (!empty($teacher->avatar)) {
+            $teacher->avatar = url($teacher->avatar);
+        }
         
-        $transformedData = $paginator->getCollection()->map(function ($teacher) {
-            if (!empty($teacher->avatar)) {
-                $teacher->avatar = url($teacher->avatar);
-            }
-            
-            if (!empty($teacher->qualifications)) {
-                $teacher->qualifications = array_map('trim', explode(',', $teacher->qualifications));
-            } else {
-                $teacher->qualifications = [];
-            }
+        if (!empty($teacher->qualifications)) {
+            $teacher->qualifications = array_map('trim', explode(',', $teacher->qualifications));
+        } else {
+            $teacher->qualifications = [];
+        }
 
-            return $teacher;
-        });
+        return $teacher;
+    });
 
-        return response()->json([
-            'success' => true,
-            'currentPage' => $paginator->currentPage(),
-            'totalPages' => $paginator->lastPage(),
-            'totalElements' => $paginator->total(),
-            'pageSize' => $paginator->perPage(),
-            'data' => $transformedData,
-        ]);
-    }
+    return response()->json([
+        'success' => true,
+        'currentPage' => $paginator->currentPage(),
+        'totalPages' => $paginator->lastPage(),
+        'totalElements' => $paginator->total(),
+        'pageSize' => $paginator->perPage(),
+        'data' => $transformedData,
+    ]);
+}
 
     public function getTeacherDetailApi(string $slug): JsonResponse
     {
