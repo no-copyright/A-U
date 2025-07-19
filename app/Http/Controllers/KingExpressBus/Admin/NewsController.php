@@ -43,36 +43,30 @@ class NewsController extends Controller
      */
     public function store(Request $request)
     {
+        // Bỏ validation cho 'author'
         $validated = $request->validate([
             'title' => 'required|string|max:255,title',
             'thumbnail' => 'required|string|max:255',
-            'author' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'content' => 'required|string',
         ]);
 
         try {
             DB::transaction(function () use ($validated) {
+                // Tự động gán tác giả là "Admin"
+                $validated['author'] = 'Admin';
                 $validated['created_at'] = now();
                 $validated['updated_at'] = now();
-
-                // === LOGIC TẠO SLUG MỚI (Đã thay đổi) ===
-                // 1. Tạm thời tạo slug rỗng hoặc từ title để insert trước
+                
                 $validated['slug'] = Str::slug($validated['title']);
-
-                // 2. Thêm tin tức vào DB để lấy về ID
                 $id = DB::table('news')->insertGetId($validated);
-
-                // 3. Tạo slug cuối cùng với ID và cập nhật lại bản ghi
+                
                 $finalSlug = $this->generateSlug($validated['title'], $id);
                 DB::table('news')->where('id', $id)->update(['slug' => $finalSlug]);
-                // ===========================================
-
-                // Cập nhật số lượng bài viết trong danh mục tương ứng
+                
                 DB::table('categories')->where('id', $validated['category_id'])->increment('count');
             });
         } catch (Throwable $e) {
-            // Nếu có lỗi, quay lại với thông báo lỗi
             return back()->with('error', 'Đã xảy ra lỗi khi tạo tin tức: ' . $e->getMessage())->withInput();
         }
 
@@ -104,33 +98,28 @@ class NewsController extends Controller
         
         $old_category_id = $news->category_id;
 
+        // Bỏ validation cho 'author'
         $validated = $request->validate([
-            'title' => 'required|string|max:255|unique:news,title,' . $id, // Thêm unique và ignore id hiện tại
+            'title' => 'required|string|max:255|unique:news,title,' . $id,
             'thumbnail' => 'required|string|max:255',
-            'author' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'content' => 'required|string',
         ]);
         
         try {
             DB::transaction(function () use ($validated, $news, $id, $old_category_id) {
-                // === LOGIC CẬP NHẬT SLUG MỚI (Đã thay đổi) ===
-                // Chỉ cập nhật slug nếu tiêu đề thay đổi
                 if ($news->title !== $validated['title']) {
                     $validated['slug'] = $this->generateSlug($validated['title'], $id);
                 }
-                // ===========================================
 
+                // Tự động gán tác giả là "Admin"
+                $validated['author'] = 'Admin';
                 $validated['updated_at'] = now();
 
-                // 1. Cập nhật bảng 'news'
                 DB::table('news')->where('id', $id)->update($validated);
 
-                // 2. Cập nhật số lượng nếu danh mục thay đổi
                 if ($old_category_id != $validated['category_id']) {
-                    // Giảm count của danh mục cũ (nếu nó vẫn tồn tại)
                     DB::table('categories')->where('id', $old_category_id)->decrement('count');
-                    // Tăng count của danh mục mới
                     DB::table('categories')->where('id', $validated['category_id'])->increment('count');
                 }
             });

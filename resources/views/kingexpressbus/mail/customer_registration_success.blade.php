@@ -3,8 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <title>Xác nhận đăng ký</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: rgba(255, 255, 255, 0.95);
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --info-box-bg: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            --info-box-text: #a16207;
+            --info-box-title: #92400e;
+            --contact-bg: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #0f172a;
+                --bg-secondary: rgba(30, 41, 59, 0.95);
+                --text-primary: #f1f5f9;
+                --text-secondary: #94a3b8;
+                --text-muted: #cbd5e1;
+                --border-color: #334155;
+                --info-box-bg: linear-gradient(135deg, #451a03 0%, #78350f 100%);
+                --info-box-text: #fde68a;
+                --info-box-title: #fbbf24;
+                --contact-bg: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            }
+        }
         
         * {
             margin: 0;
@@ -15,7 +45,7 @@
         body {
             font-family: 'Inter', Arial, sans-serif;
             line-height: 1.6;
-            background: #f8fafc;
+            background: var(--bg-primary);
             min-height: 100vh;
             padding: 20px;
         }
@@ -23,12 +53,12 @@
         .email-container {
             max-width: 600px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--bg-secondary);
             backdrop-filter: blur(20px);
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--border-color);
         }
         
         .header {
@@ -88,25 +118,24 @@
         
         .greeting {
             font-size: 18px;
-            color: #1e293b;
+            color: var(--text-primary);
             margin-bottom: 25px;
             font-weight: 600;
         }
         
         .content-text {
             font-size: 16px;
-            color: #475569;
+            color: var(--text-secondary);
             margin-bottom: 20px;
             line-height: 1.7;
         }
         
         .highlight-name {
-            color: #f97316;
             font-weight: 600;
         }
         
         .info-box {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            background: var(--info-box-bg);
             border-left: 4px solid #fb923c;
             padding: 20px;
             border-radius: 12px;
@@ -117,40 +146,34 @@
         .info-box-title {
             font-size: 16px;
             font-weight: 600;
-            color: #92400e;
+            color: var(--info-box-title);
             margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
         
         .info-box-text {
             font-size: 15px;
-            color: #a16207;
+            color: var(--info-box-text);
             line-height: 1.6;
         }
         
         .contact-section {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            background: var(--contact-bg);
             padding: 25px;
             border-radius: 15px;
             margin: 30px 0;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--border-color);
         }
         
         .contact-title {
             font-size: 18px;
             font-weight: 600;
-            color: #1e293b;
+            color: var(--text-primary);
             margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
         
         .contact-item {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 12px;
             margin-bottom: 12px;
             font-size: 15px;
@@ -160,10 +183,14 @@
             margin-bottom: 0;
         }
         
-        .contact-icon {
-            width: 20px;
-            text-align: center;
-            font-size: 16px;
+        .contact-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 80px;
+        }
+        
+        .contact-value {
+            color: var(--text-secondary);
         }
         
         .contact-link {
@@ -192,10 +219,6 @@
         .company-footer {
             font-size: 18px;
             font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
         }
         
         .divider {
@@ -244,9 +267,9 @@
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="success-badge">✅ Đăng ký thành công</div>
+            <div class="success-badge">Đăng ký thành công</div>
             <h2>Cảm ơn bạn đã đăng ký tư vấn!</h2>
-            <div class="company-name">📚 A&U Center English</div>
+            <div class="company-name">A&U Center English</div>
         </div>
         
         <div class="content">
@@ -261,7 +284,7 @@
             
             <div class="info-box">
                 <div class="info-box-title">
-                    🎯 Thông tin tiếp theo
+                    Thông tin tiếp theo
                 </div>
                 <div class="info-box-text">
                     A&U English Center sẽ liên hệ với bạn trong thời gian sớm nhất để xác nhận và tư vấn chi tiết hơn về khóa học phù hợp nhất cho con bạn.
@@ -272,19 +295,19 @@
             
             <div class="contact-section">
                 <div class="contact-title">
-                    📞 Thông tin liên hệ
+                    Thông tin liên hệ
                 </div>
                 <div class="contact-item">
-                    <span class="contact-icon">📱</span>
-                    <span>Hotline: <a href="tel:[Số điện thoại của trung tâm]" class="contact-link">[Số điện thoại của trung tâm]</a></span>
+                    <span class="contact-label">Hotline:</span>
+                    <span class="contact-value"><a href="tel:[Số điện thoại của trung tâm]" class="contact-link">[Số điện thoại của trung tâm]</a></span>
                 </div>
                 <div class="contact-item">
-                    <span class="contact-icon">📧</span>
-                    <span>Email: <a href="mailto:[Email của trung tâm]" class="contact-link">[Email của trung tâm]</a></span>
+                    <span class="contact-label">Email:</span>
+                    <span class="contact-value"><a href="mailto:[Email của trung tâm]" class="contact-link">[Email của trung tâm]</a></span>
                 </div>
                 <div class="contact-item">
-                    <span class="contact-icon">⏰</span>
-                    <span>Thời gian làm việc: Thứ 2 - Chủ nhật (8:00 - 20:00)</span>
+                    <span class="contact-label">Giờ làm việc:</span>
+                    <span class="contact-value">Thứ 2 - Chủ nhật (8:00 - 20:00)</span>
                 </div>
             </div>
             
@@ -296,7 +319,7 @@
         <div class="footer">
             <div class="signature">Trân trọng,</div>
             <div class="company-footer">
-                📚 A&U English Center
+                A&U English Center
             </div>
         </div>
     </div>

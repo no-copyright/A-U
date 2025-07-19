@@ -33,6 +33,7 @@ Route::prefix('admin')->name("admin.")->middleware(AuthenticationMiddleware::cla
     Route::resource("news", NewsController::class)->except(['show']);
     Route::resource("training", TrainingController::class)->except(['show']);
     Route::resource("customers", CustomerController::class)->only(['index', 'show', 'destroy']);
+    Route::post("customers/{customer}/update-status", [CustomerController::class, 'updateStatus'])->name('customers.updateStatus');
     Route::resource("teachers", TeacherController::class)->except(['show']);
     // Contact (không phải resource chuẩn)
     Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');

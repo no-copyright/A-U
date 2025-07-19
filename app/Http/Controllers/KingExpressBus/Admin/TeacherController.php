@@ -132,7 +132,7 @@ class TeacherController extends Controller
 
     public function getTeacherListApi(Request $request): JsonResponse
     {
-        $pageSize = $request->query('pageSize', 10);
+        $pageSize = $request->query('pageSize', 2);
 
         $paginator = DB::table('teachers')
             ->select('id', 'full_name', 'slug', 'role', 'qualifications', 'avatar')

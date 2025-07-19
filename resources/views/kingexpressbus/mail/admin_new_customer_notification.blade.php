@@ -3,8 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <title>Thông báo khách hàng mới</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: rgba(255, 255, 255, 0.95);
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #475569;
+            --border-color: #e2e8f0;
+            --border-light: #f1f5f9;
+            --table-hover: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            --table-header: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #0f172a;
+                --bg-secondary: rgba(30, 41, 59, 0.95);
+                --text-primary: #f1f5f9;
+                --text-secondary: #cbd5e1;
+                --text-muted: #94a3b8;
+                --border-color: #334155;
+                --border-light: #475569;
+                --table-hover: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+                --table-header: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            }
+        }
         
         * {
             margin: 0;
@@ -15,7 +43,7 @@
         body {
             font-family: 'Inter', Arial, sans-serif;
             line-height: 1.6;
-            background: #f8fafc;
+            background: var(--bg-primary);
             min-height: 100vh;
             padding: 20px;
         }
@@ -23,12 +51,12 @@
         .email-container {
             max-width: 600px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--bg-secondary);
             backdrop-filter: blur(20px);
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--border-color);
         }
         
         .header {
@@ -88,7 +116,7 @@
         
         .intro-text {
             font-size: 16px;
-            color: #64748b;
+            color: var(--text-secondary);
             margin-bottom: 30px;
             text-align: center;
             line-height: 1.7;
@@ -97,16 +125,8 @@
         .section-title {
             font-size: 20px;
             font-weight: 600;
-            color: #1e293b;
+            color: var(--text-primary);
             margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .section-title::before {
-            content: '📋';
-            font-size: 22px;
         }
         
         .info-table {
@@ -119,14 +139,14 @@
         }
         
         .info-table th {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            color: #334155;
+            background: var(--table-header);
+            color: var(--text-primary);
             text-align: left;
             padding: 16px 20px;
             font-weight: 600;
             font-size: 14px;
-            border-bottom: 1px solid #e2e8f0;
-            width: 40%;
+            border-bottom: 1px solid var(--border-color);
+            width: 50%;
             position: relative;
         }
         
@@ -144,15 +164,15 @@
         
         .info-table td {
             padding: 16px 20px;
-            color: #475569;
-            background: white;
-            border-bottom: 1px solid #f1f5f9;
+            color: var(--text-muted);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-light);
             font-size: 15px;
             line-height: 1.6;
         }
         
         .info-table tr:hover {
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            background: var(--table-hover);
             transform: translateY(-1px);
             transition: all 0.3s ease;
         }
@@ -163,14 +183,14 @@
         }
         
         .footer {
-            background: #f8fafc;
+            background: var(--bg-primary);
             padding: 30px;
             text-align: center;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid var(--border-color);
         }
         
         .footer-text {
-            color: #64748b;
+            color: var(--text-secondary);
             font-size: 14px;
             margin-bottom: 15px;
         }
@@ -195,7 +215,7 @@
         
         .highlight-value {
             font-weight: 600;
-            color: #1e293b;
+            color: var(--text-primary);
         }
         
         @media (max-width: 600px) {
@@ -219,6 +239,10 @@
                 padding: 30px 20px;
             }
             
+            .info-table th {
+                width: 55%;
+            }
+            
             .info-table th,
             .info-table td {
                 padding: 12px 15px;
@@ -234,9 +258,9 @@
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="notification-badge">🔔 Thông báo mới</div>
+            <div class="notification-badge">Thông báo mới</div>
             <h2>Có khách hàng mới đăng ký tư vấn</h2>
-            <div class="company-name">📚 A&U Center English</div>
+            <div class="company-name">A&U Center English</div>
         </div>
         
         <div class="content">
@@ -249,35 +273,35 @@
             
             <table class="info-table">
                 <tr>
-                    <th>👤 Tên phụ huynh</th>
+                    <th>Tên phụ huynh</th>
                     <td class="highlight-value">{{ $customerData['full_name_parent'] }}</td>
                 </tr>
                 <tr>
-                    <th>📱 Số điện thoại</th>
+                    <th>Số điện thoại</th>
                     <td class="highlight-value">{{ $customerData['phone'] }}</td>
                 </tr>
                 <tr>
-                    <th>📧 Email</th>
+                    <th>Email</th>
                     <td class="highlight-value">{{ $customerData['email'] }}</td>
                 </tr>
                 <tr>
-                    <th>👶 Tên học viên</th>
+                    <th>Tên học viên</th>
                     <td class="highlight-value">{{ $customerData['full_name_children'] }}</td>
                 </tr>
                 <tr>
-                    <th>🎂 Ngày sinh</th>
+                    <th>Ngày sinh</th>
                     <td>{{ \Carbon\Carbon::parse($customerData['date_of_birth'])->format('d/m/Y') }}</td>
                 </tr>
                 <tr>
-                    <th>📍 Địa chỉ</th>
+                    <th>Địa chỉ</th>
                     <td>{{ $customerData['address'] }}</td>
                 </tr>
                 <tr>
-                    <th>📚 Khóa học quan tâm</th>
+                    <th>Khóa học quan tâm</th>
                     <td>{{ $customerData['training_title'] ?? 'Chưa chọn' }}</td>
                 </tr>
                 <tr>
-                    <th>📝 Ghi chú</th>
+                    <th>Ghi chú</th>
                     <td>{{ $customerData['note'] ?? 'Không có' }}</td>
                 </tr>
             </table>
@@ -285,7 +309,7 @@
         
         <div class="footer">
             <p class="footer-text">
-                📞 Hãy liên hệ với khách hàng trong thời gian sớm nhất để có thể hỗ trợ tốt nhất.
+                Hãy liên hệ với khách hàng trong thời gian sớm nhất để có thể hỗ trợ tốt nhất.
             </p>
             <a href="#" class="action-button">Xem chi tiết trong hệ thống</a>
         </div>

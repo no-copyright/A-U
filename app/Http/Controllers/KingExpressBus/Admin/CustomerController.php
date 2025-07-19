@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Throwable;
+use Illuminate\Validation\Rule;
 
 use Illuminate\Support\Facades\Mail;
 use App\Mail\KingExpressBus\CustomerRegistrationSuccess;
@@ -19,36 +20,85 @@ class CustomerController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $customers = DB::table('customers')
+        // Bắt đầu xây dựng query
+        $query = DB::table('customers')
             ->leftJoin('trainings', 'customers.training_id', '=', 'trainings.id')
-            ->select('customers.id', 'customers.full_name_parent', 'customers.phone', 'customers.full_name_children', 'customers.created_at', 'trainings.title as training_title')
-            ->orderBy('customers.created_at', 'desc')
-            ->get();
+            ->select('customers.id', 'customers.full_name_parent', 'customers.phone', 'customers.full_name_children', 'customers.created_at', 'trainings.title as training_title', 'customers.status');
+
+        // Lọc theo trạng thái
+        if ($request->filled('status')) {
+            $query->where('customers.status', $request->input('status'));
+        }
+
+        // Lọc theo khoảng ngày
+        if ($request->filled('date_range')) {
+            try {
+                // Tách chuỗi ngày bắt đầu và kết thúc
+                $dateParts = explode(' - ', $request->input('date_range'));
+                if (count($dateParts) == 2) {
+                    $startDate = \Carbon\Carbon::createFromFormat('d/m/Y', $dateParts[0])->startOfDay();
+                    $endDate = \Carbon\Carbon::createFromFormat('d/m/Y', $dateParts[1])->endOfDay();
+                    
+                    // Áp dụng điều kiện lọc vào query
+                    $query->whereBetween('customers.created_at', [$startDate, $endDate]);
+                }
+            } catch (\Exception $e) {
+                // Bỏ qua nếu định dạng ngày không hợp lệ, có thể log lỗi nếu cần
+                Log::warning('Invalid date format for customer filter: ' . $request->input('date_range'));
+            }
+        }
+
+        // Lấy kết quả cuối cùng
+        $customers = $query->orderBy('customers.created_at', 'desc')->get();
 
         return view('kingexpressbus.admin.modules.customers.index', compact('customers'));
     }
 
-    /**
-     * Display the specified resource.
-     * HÀM MỚI ĐƯỢC THÊM VÀO
-     */
     public function show(string $id)
     {
         $customer = DB::table('customers')
             ->leftJoin('trainings', 'customers.training_id', '=', 'trainings.id')
             ->select('customers.*', 'trainings.title as training_title')
             ->where('customers.id', $id)
-            ->firstOrFail(); // Dùng firstOrFail để tự động báo lỗi 404 nếu không tìm thấy
+            ->firstOrFail();
 
         return view('kingexpressbus.admin.modules.customers.show', compact('customer'));
     }
 
-
     /**
-     * Remove the specified resource from storage.
+     * PHƯƠNG THỨC MỚI: Cập nhật trạng thái của một khách hàng
      */
+    public function updateStatus(Request $request, string $id)
+    {
+        // 1. Validate dữ liệu đầu vào
+        $validator = Validator::make($request->all(), [
+            'status' => ['required', Rule::in(['pending', 'confirmed', 'cancelled'])],
+        ]);
+
+        if ($validator->fails()) {
+            return back()->with('error', 'Trạng thái không hợp lệ.');
+        }
+
+        // 2. Tìm khách hàng
+        $customer = DB::table('customers')->where('id', $id);
+        if (!$customer->exists()) {
+            return back()->with('error', 'Không tìm thấy khách hàng.');
+        }
+
+        // 3. Cập nhật trạng thái
+        try {
+            $customer->update(['status' => $request->input('status')]);
+        } catch (Throwable $e) {
+            Log::error("Error updating customer status: " . $e->getMessage());
+            return back()->with('error', 'Đã có lỗi xảy ra khi cập nhật trạng thái.');
+        }
+
+        // 4. Quay lại với thông báo thành công
+        return back()->with('success', 'Cập nhật trạng thái thành công!');
+    }
+
     public function destroy(string $id)
     {
         $customer = DB::table('customers')->find($id);
@@ -91,16 +141,16 @@ class CustomerController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-        
+
         $validatedData = $validator->validated();
         $validatedData['created_at'] = now();
         $validatedData['updated_at'] = now();
 
         try {
             $customerId = DB::table('customers')->insertGetId($validatedData);
-            
+
             // === BẮT ĐẦU LOGIC GỬI EMAIL ===
-            
+
             // Lấy thêm tên khóa học để hiển thị trong email
             if (!empty($validatedData['training_id'])) {
                 $training = DB::table('trainings')->find($validatedData['training_id']);

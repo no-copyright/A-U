@@ -27,16 +27,11 @@
 
                 <x-inputs.text label="Tiêu đề" name="title" :value="old('title', $news?->title)" required/>
                 
-                {{-- Cột 'slug' sẽ được tạo tự động từ Tiêu đề trong Controller. --}}
-
                 <x-inputs.image-link label="Ảnh đại diện (Thumbnail)" name="thumbnail" :value="old('thumbnail', $news?->thumbnail)" required/>
                 
                 <div class="row">
-                    <div class="col-md-6">
-                        <x-inputs.text label="Tác giả" name="author" :value="old('author', $news?->author)" required/>
-                    </div>
-                    <div class="col-md-6">
-                        {{-- Giả sử biến $categories được truyền từ Controller --}}
+                    {{-- Cho danh mục chiếm toàn bộ chiều rộng --}}
+                    <div class="col-md-12">
                         <x-inputs.select label="Danh mục" name="category_id" required>
                             <option value="">-- Chọn danh mục --</option>
                             @foreach($categories as $category)
@@ -46,6 +41,8 @@
                             @endforeach
                         </x-inputs.select>
                     </div>
+                    
+                    {{-- Xóa bỏ hoàn toàn ô nhập tác giả --}}
                 </div>
 
                 <x-inputs.editor label="Nội dung" name="content" :value="old('content', $news?->content)" required/>

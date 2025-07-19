@@ -102,7 +102,7 @@ class DocumentController extends Controller
 
     public function getDocumentsApi(Request $request): JsonResponse
     {
-        $pageSize = $request->query('pageSize', 10);
+        $pageSize = $request->query('pageSize', 4);
 
         $paginator = DB::table('document')
             ->select('id', 'name', 'src', 'created_at')

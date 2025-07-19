@@ -55,6 +55,7 @@ return new class extends Migration {
             $table->string('phone', 10);
             $table->string('email', 50);
             $table->string('full_name_children');
+            $table->enum('status', ['pending', 'confirmed', 'cancelled'])->default('pending');
             $table->date('date_of_birth');
             $table->text('address');
             $table->longText('note')->nullable();
