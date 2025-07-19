@@ -1,73 +1,101 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-// Các controller của dự án hiện tại
+
+// --- Controller Imports ---
 use App\Http\Controllers\KingExpressBus\Admin\AdminController;
 use App\Http\Controllers\KingExpressBus\Admin\CategoryController;
-use App\Http\Controllers\KingExpressBus\Admin\NewsController;
-use App\Http\Controllers\KingExpressBus\Admin\TrainingController;
-use App\Http\Controllers\KingExpressBus\Admin\CustomerController;
-use App\Http\Controllers\KingExpressBus\Admin\TeacherController;
 use App\Http\Controllers\KingExpressBus\Admin\ContactController;
-use App\Http\Controllers\KingExpressBus\Admin\ParentsCornerController;
+use App\Http\Controllers\KingExpressBus\Admin\CustomerController;
 use App\Http\Controllers\KingExpressBus\Admin\DocumentController;
-
-// Controller và Middleware cho Auth
+use App\Http\Controllers\KingExpressBus\Admin\NewsController;
+use App\Http\Controllers\KingExpressBus\Admin\ParentsCornerController;
+use App\Http\Controllers\KingExpressBus\Admin\TeacherController;
+use App\Http\Controllers\KingExpressBus\Admin\TrainingController;
 use App\Http\Controllers\KingExpressBus\Auth\AuthenticationController;
 use App\Http\Middleware\AuthenticationMiddleware;
 
-// Auth routes
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+// Redirect root URL to the admin login page
+Route::get('/', function () {
+    return to_route('admin.login');
+});
+
+// --- Authentication Routes ---
 Route::get('/admin/login', [AuthenticationController::class, "login"])->name("admin.login");
 Route::get('/admin/logout', [AuthenticationController::class, "logout"])->name("admin.logout");
 Route::post('/admin/authenticate', [AuthenticationController::class, "authenticate"])->name("admin.authenticate");
 
-// Admin routes group
+
+// --- Admin Panel Routes (Protected by Middleware) ---
 Route::prefix('admin')->name("admin.")->middleware(AuthenticationMiddleware::class)->group(function () {
-    // Dashboard - bây giờ là quản lý trang chủ
+    // Dashboard & Homepage Management
     Route::get("/dashboard", [AdminController::class, "index"])->name("dashboard.index");
-    // THÊM ROUTE UPDATE CHO DASHBOARD
     Route::post("/dashboard/update", [AdminController::class, "update"])->name("dashboard.update");
 
-    // Các resource của dự án
-    Route::resource("categories", CategoryController::class)->except(['show']);
-    Route::resource("news", NewsController::class)->except(['show']);
-    Route::resource("training", TrainingController::class)->except(['show']);
-    Route::resource("customers", CustomerController::class)->only(['index', 'show', 'destroy']);
-    Route::post("customers/{customer}/update-status", [CustomerController::class, 'updateStatus'])->name('customers.updateStatus');
-    Route::resource("teachers", TeacherController::class)->except(['show']);
-    // Contact (không phải resource chuẩn)
+    // Contact Page Management
     Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
     Route::post('/contact/update', [ContactController::class, 'update'])->name('contact.update');
     
-    // Parents' Corner
+    // CRUD Resources
+    Route::resource("categories", CategoryController::class)->except(['show']);
+    Route::resource("news", NewsController::class)->except(['show']);
+    Route::resource("training", TrainingController::class)->except(['show']);
+    Route::resource("teachers", TeacherController::class)->except(['show']);
     Route::resource("parents-corner", ParentsCornerController::class)->except(['show']);
-
-    // Document
     Route::resource("documents", DocumentController::class)->except(['show']);
+    
+    // Customer Routes (with custom status update)
+    Route::resource("customers", CustomerController::class)->only(['index', 'show', 'destroy']);
+    Route::post("customers/{customer}/update-status", [CustomerController::class, 'updateStatus'])->name('customers.updateStatus');
 });
 
-// CKFinder Plugin routes
-Route::any('/ckfinder/connector', '\CKSource\CKFinderBridge\Controller\CKFinderController@requestAction')
-    ->name('ckfinder_connector');
 
-Route::any('/ckfinder/browser', '\CKSource\CKFinderBridge\Controller\CKFinderController@browserAction')
-    ->name('ckfinder_browser');
+// --- Third-Party Routes ---
+Route::group(['prefix' => 'ckfinder', 'middleware' => ['web']], function () {
+    Route::any('/connector', '\CKSource\CKFinderBridge\Controller\CKFinderController@requestAction')->name('ckfinder_connector');
+    Route::any('/browser', '\CKSource\CKFinderBridge\Controller\CKFinderController@browserAction')->name('ckfinder_browser');
+});
 
-// api routes
-Route::get('/api/homepage', [AdminController::class, 'getHomePageApi']);
-Route::get('/api/categories', [CategoryController::class, 'getCategories']);
-Route::get('/api/categories/{categorySlug}/news', [CategoryController::class, 'getNewsByCategorySlug']);
-Route::get('/api/news', [NewsController::class, 'getNewsList']);
-Route::get('/api/news/{slug}', [NewsController::class, 'getNewsDetailBySlug']);
-Route::post('/api/customers', [CustomerController::class, 'store']);
-// Training APIs
-Route::get('/api/training', [TrainingController::class, 'getTrainingListApi']);
-Route::get('/api/training/{slug}', [TrainingController::class, 'getTrainingDetailApi']);
 
-// Teacher APIs
-Route::get('/api/teachers', [TeacherController::class, 'getTeacherListApi']);
-Route::get('/api/teachers/{slug}', [TeacherController::class, 'getTeacherDetailApi']);
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('api')->group(function() {
+    // Homepage
+    Route::get('/homepage', [AdminController::class, 'getHomePageApi']);
 
-Route::get('/api/contact', [ContactController::class, 'getContactApi']);
-Route::get('/api/parents-corner', [ParentsCornerController::class, 'getParentsCornerApi']);
-Route::get('/api/documents', [DocumentController::class, 'getDocumentsApi']);
+    // Categories & News
+    Route::get('/categories', [CategoryController::class, 'getCategories']);
+    Route::get('/categories/{categorySlug}/news', [CategoryController::class, 'getNewsByCategorySlug']);
+    Route::get('/news', [NewsController::class, 'getNewsList']);
+    Route::get('/news/{slug}', [NewsController::class, 'getNewsDetailBySlug']);
+
+    // Customers
+    Route::post('/customers', [CustomerController::class, 'store']);
+
+    // Trainings
+    Route::get('/training', [TrainingController::class, 'getTrainingListApi']);
+    Route::get('/training/{slug}', [TrainingController::class, 'getTrainingDetailApi']);
+
+    // Teachers
+    Route::get('/teachers', [TeacherController::class, 'getTeacherListApi']);
+    Route::get('/teachers/{slug}', [TeacherController::class, 'getTeacherDetailApi']);
+    
+    // Contact
+    Route::get('/contact', [ContactController::class, 'getContactApi']);
+
+    // Parents' Corner
+    Route::get('/parents-corner', [ParentsCornerController::class, 'getParentsCornerApi']);
+    Route::get('/parents-corner/{slug}', [ParentsCornerController::class, 'getParentsCornerDetailApi']);
+
+    // Documents
+    Route::get('/documents', [DocumentController::class, 'getDocumentsApi']);
+});

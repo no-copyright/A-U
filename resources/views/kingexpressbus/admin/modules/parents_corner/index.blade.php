@@ -19,8 +19,9 @@
                     <th>ID</th>
                     <th>Ảnh</th>
                     <th>Tên Phụ huynh</th>
-                    <th>Mô tả</th>
-                    <th>Đánh giá</th>
+                    <th>Slug</th>
+                    <th>Chức danh/Mô tả</th>
+                    <th>Đánh giá (rate)</th>
                     <th>Hành động</th>
                 </tr>
             </thead>
@@ -30,6 +31,7 @@
                     <td>{{ $review->id }}</td>
                     <td><img src="{{ $review->image }}" alt="Ảnh" style="max-width: 80px; border-radius: 50%;"></td>
                     <td>{{ $review->name }}</td>
+                    <td>{{ $review->slug }}</td>
                     <td>{{ $review->describe }}</td>
                     <td>{{ $review->rate }}</td>
                     <td>

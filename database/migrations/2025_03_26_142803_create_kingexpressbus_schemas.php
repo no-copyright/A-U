@@ -5,9 +5,6 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('categories', function (Blueprint $table) {
@@ -32,6 +29,7 @@ return new class extends Migration {
 
         Schema::create('trainings', function (Blueprint $table) {
             $table->id();
+            $table->integer('priority')->default(99);
             $table->string('slug')->unique();
             $table->string('title');
             $table->string('age');
@@ -64,6 +62,7 @@ return new class extends Migration {
 
         Schema::create('teachers', function (Blueprint $table) {
             $table->id();
+            $table->integer('priority')->default(99);
             $table->string('full_name');
             $table->string('role');
             $table->text('qualifications');
@@ -96,6 +95,8 @@ return new class extends Migration {
 
         Schema::create('parents_corner', function (Blueprint $table) {
             $table->id();
+            $table->integer('priority')->default(99);
+            $table->string('slug')->unique();
             $table->longText('image');
             $table->text('rate');
             $table->string('name', 50);
@@ -106,15 +107,13 @@ return new class extends Migration {
 
         Schema::create('document', function (Blueprint $table) {
             $table->id();
+            $table->integer('priority')->default(99);
             $table->string('name', 50);
             $table->text('src');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('categories');
@@ -122,5 +121,9 @@ return new class extends Migration {
         Schema::dropIfExists('trainings');
         Schema::dropIfExists('customers');
         Schema::dropIfExists('teachers');
+        Schema::dropIfExists('home_page');
+        Schema::dropIfExists('contact');
+        Schema::dropIfExists('parents_corner');
+        Schema::dropIfExists('document');
     }
 };

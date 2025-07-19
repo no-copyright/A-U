@@ -33,7 +33,15 @@ $isEdit = !empty($training?->id);
             </div>
             @endif
 
-            <x-inputs.text label="Tiêu đề Khoá học" name="title" :value="old('title', $training?->title)" required />
+            <div class="row">
+                <div class="col-md-9">
+                    <x-inputs.text label="Tiêu đề Khoá học" name="title" :value="old('title', $training?->title)" required />
+                </div>
+                <div class="col-md-3">
+                    <x-inputs.number label="Độ ưu tiên (Số nhỏ ưu tiên cao)" name="priority" :value="old('priority', $training?->priority ?? 99)" required />
+                </div>
+            </div>
+            
             <x-inputs.image-link label="Ảnh đại diện (Thumbnail)" name="thumbnail" :value="old('thumbnail', $training?->thumbnail)" required />
             <x-inputs.editor label="Mô tả chung" name="description" :value="old('description', $training?->description)" required />
 

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\KingExpressBus\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Traits\SlugGenerator; // <-- THÊM DÒNG NÀY
+use App\Http\Traits\SlugGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -11,33 +11,25 @@ use Illuminate\Http\JsonResponse;
 
 class TrainingController extends Controller
 {
-    use SlugGenerator; // <-- SỬ DỤNG TRAIT
+    use SlugGenerator;
 
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $trainings = DB::table('trainings')->orderBy('title', 'asc')->get();
+        $trainings = DB::table('trainings')->orderBy('priority', 'asc')->orderBy('title', 'asc')->get();
         return view('kingexpressbus.admin.modules.training.index', compact('trainings'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $training = null;
         return view('kingexpressbus.admin.modules.training.createOrEdit', compact('training'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255,title',
+            'priority' => 'required|integer|min:0',
             'age' => 'required|string|max:255',
             'description' => 'required|string',
             'thumbnail' => 'required|string|max:255',
@@ -54,24 +46,15 @@ class TrainingController extends Controller
         $validated['created_at'] = now();
         $validated['updated_at'] = now();
         
-        // === LOGIC TẠO SLUG MỚI (Đã thay đổi) ===
-        // 1. Tạo slug tạm
         $validated['slug'] = Str::slug($validated['title']);
-        
-        // 2. Insert để lấy ID
         $id = DB::table('trainings')->insertGetId($validated);
         
-        // 3. Tạo slug cuối cùng và update
         $finalSlug = $this->generateSlug($validated['title'], $id);
         DB::table('trainings')->where('id', $id)->update(['slug' => $finalSlug]);
-        // ===========================================
 
         return redirect()->route('admin.training.index')->with('success', 'Khoá đào tạo đã được tạo thành công!');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
         $training = DB::table('trainings')->find($id);
@@ -81,9 +64,6 @@ class TrainingController extends Controller
         return view('kingexpressbus.admin.modules.training.createOrEdit', compact('training'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $training = DB::table('trainings')->find($id);
@@ -93,6 +73,7 @@ class TrainingController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:255|unique:trainings,title,' . $id,
+            'priority' => 'required|integer|min:0',
             'age' => 'required|string|max:255',
             'description' => 'required|string',
             'thumbnail' => 'required|string|max:255',
@@ -106,11 +87,9 @@ class TrainingController extends Controller
             'curriculum' => 'nullable|string',
         ]);
 
-        // === LOGIC CẬP NHẬT SLUG MỚI (Đã thay đổi) ===
         if ($training->title !== $validated['title']) {
             $validated['slug'] = $this->generateSlug($validated['title'], $id);
         }
-        // ===========================================
 
         $validated['updated_at'] = now();
 
@@ -119,9 +98,6 @@ class TrainingController extends Controller
         return redirect()->route('admin.training.index')->with('success', 'Khoá đào tạo đã được cập nhật thành công!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $training = DB::table('trainings')->find($id);
@@ -139,13 +115,13 @@ class TrainingController extends Controller
         return redirect()->route('admin.training.index')->with('success', 'Khoá đào tạo đã được xóa thành công!');
     }
 
-
     public function getTrainingListApi(Request $request): JsonResponse
     {
         $pageSize = $request->query('pageSize', 10);
 
         $paginator = DB::table('trainings')
             ->select('id', 'title', 'slug', 'age', 'description', 'thumbnail', 'duration')
+            ->orderBy('priority', 'asc')
             ->orderBy('title', 'asc')
             ->paginate($pageSize);
         
@@ -166,9 +142,6 @@ class TrainingController extends Controller
         ]);
     }
 
-    /**
-     * API: Lấy thông tin chi tiết của một khoá đào tạo theo slug.
-     */
     public function getTrainingDetailApi(string $slug): JsonResponse
     {
         $training = DB::table('trainings')->where('slug', $slug)->first();
@@ -177,14 +150,9 @@ class TrainingController extends Controller
             return response()->json(['success' => false, 'message' => 'Training not found.'], 404);
         }
         
-        // Chuyển đổi URL thumbnail
         if (!empty($training->thumbnail)) {
             $training->thumbnail = url($training->thumbnail);
         }
-
-        // Decode các trường JSON nếu có (ví dụ: curriculum)
-        // Trong schema hiện tại, các trường này là text, nếu bạn đổi sang JSON, hãy bỏ comment
-        // $training->curriculum = json_decode($training->curriculum, true);
 
         return response()->json(['success' => true, 'data' => $training]);
     }

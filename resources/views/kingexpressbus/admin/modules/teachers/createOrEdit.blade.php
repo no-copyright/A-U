@@ -34,11 +34,14 @@ $isEdit = !empty($teacher?->id);
             @endif
 
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-5">
                     <x-inputs.text label="Họ và tên" name="full_name" :value="old('full_name', $teacher?->full_name)" required />
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <x-inputs.text label="Quốc tịch" name="role" :value="old('role', $teacher?->role)" required />
+                </div>
+                <div class="col-md-3">
+                    <x-inputs.number label="Độ ưu tiên" name="priority" :value="old('priority', $teacher?->priority ?? 99)" required />
                 </div>
             </div>
 
