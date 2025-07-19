@@ -83,6 +83,32 @@ return new class extends Migration {
             $table->string('link_youtubes')->unique();
             $table->timestamps();
         });
+
+        Schema::create('contact', function (Blueprint $table) {
+            $table->id();
+            $table->longText('address');
+            $table->string('phone', 10);
+            $table->string('email', 50);
+            $table->string('facebook', 50);
+            $table->timestamps();
+        });
+
+        Schema::create('parents_corner', function (Blueprint $table) {
+            $table->id();
+            $table->longText('image');
+            $table->text('rate');
+            $table->string('name', 50);
+            $table->string('describe', 50);
+            $table->longText('content');
+            $table->timestamps();
+        });
+
+        Schema::create('document', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 50);
+            $table->text('src');
+            $table->timestamps();
+        });
     }
 
     /**

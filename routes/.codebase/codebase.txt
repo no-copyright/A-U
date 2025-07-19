@@ -1,3 +1,29 @@
+/* ==========================================================
+   CODEBASE SNAPSHOT - 2025-07-19 09:15:27
+   Project: routes
+   Files: 2 (2 text, 0 binary)
+   Ignored Items: 1
+   ========================================================== */
+
+/* PROJECT STRUCTURE
+   ------------------------------------------------------------
+   .
+   ├── console.php
+   └── web.php
+   ------------------------------------------------------------ */
+
+/* ===== console.php ===== */
+<?php
+
+use Illuminate\Foundation\Inspiring;
+use Illuminate\Support\Facades\Artisan;
+
+Artisan::command('inspire', function () {
+    $this->comment(Inspiring::quote());
+})->purpose('Display an inspiring quote');
+
+
+/* ===== web.php ===== */
 <?php
 
 use Illuminate\Support\Facades\Route;
@@ -8,9 +34,6 @@ use App\Http\Controllers\KingExpressBus\Admin\NewsController;
 use App\Http\Controllers\KingExpressBus\Admin\TrainingController;
 use App\Http\Controllers\KingExpressBus\Admin\CustomerController;
 use App\Http\Controllers\KingExpressBus\Admin\TeacherController;
-use App\Http\Controllers\KingExpressBus\Admin\ContactController;
-use App\Http\Controllers\KingExpressBus\Admin\ParentsCornerController;
-use App\Http\Controllers\KingExpressBus\Admin\DocumentController;
 
 // Controller và Middleware cho Auth
 use App\Http\Controllers\KingExpressBus\Auth\AuthenticationController;
@@ -34,15 +57,6 @@ Route::prefix('admin')->name("admin.")->middleware(AuthenticationMiddleware::cla
     Route::resource("training", TrainingController::class)->except(['show']);
     Route::resource("customers", CustomerController::class)->only(['index', 'show', 'destroy']);
     Route::resource("teachers", TeacherController::class)->except(['show']);
-    // Contact (không phải resource chuẩn)
-    Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
-    Route::post('/contact/update', [ContactController::class, 'update'])->name('contact.update');
-    
-    // Parents' Corner
-    Route::resource("parents-corner", ParentsCornerController::class)->except(['show']);
-
-    // Document
-    Route::resource("documents", DocumentController::class)->except(['show']);
 });
 
 // CKFinder Plugin routes
@@ -67,6 +81,10 @@ Route::get('/api/training/{slug}', [TrainingController::class, 'getTrainingDetai
 Route::get('/api/teachers', [TeacherController::class, 'getTeacherListApi']);
 Route::get('/api/teachers/{slug}', [TeacherController::class, 'getTeacherDetailApi']);
 
-Route::get('/api/contact', [ContactController::class, 'getContactApi']);
-Route::get('/api/parents-corner', [ParentsCornerController::class, 'getParentsCornerApi']);
-Route::get('/api/documents', [DocumentController::class, 'getDocumentsApi']);
+
+/* ===== IGNORED FILES & DIRECTORIES ===== */
+/* The following items were excluded based on ignore rules */
+
+/* Ignored items list: */
+/* Ignored directories: */
+/*   .codebase/ */

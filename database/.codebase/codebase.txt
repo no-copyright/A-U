@@ -1,0 +1,426 @@
+/* ==========================================================
+   CODEBASE SNAPSHOT - 2025-07-19 09:15:08
+   Project: database
+   Files: 7 (7 text, 0 binary)
+   Ignored Items: 1
+   ========================================================== */
+
+/* PROJECT STRUCTURE
+   ------------------------------------------------------------
+   .
+   ├── factories/
+   │   └── UserFactory.php
+   ├── migrations/
+   │   ├── 0001_01_01_000000_create_users_table.php
+   │   ├── 0001_01_01_000001_create_cache_table.php
+   │   ├── 0001_01_01_000002_create_jobs_table.php
+   │   └── 2025_03_26_142803_create_kingexpressbus_schemas.php
+   └── seeders/
+       ├── DatabaseSeeder.php
+       └── UserSeeder.php
+   ------------------------------------------------------------ */
+
+/* ===== factories\UserFactory.php ===== */
+<?php
+
+namespace Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ */
+class UserFactory extends Factory
+{
+    /**
+     * The current password being used by the factory.
+     */
+    protected static ?string $password;
+
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'name' => fake()->name(),
+            'email' => fake()->unique()->safeEmail(),
+            'email_verified_at' => now(),
+            'password' => static::$password ??= Hash::make('password'),
+            'remember_token' => Str::random(10),
+        ];
+    }
+
+    /**
+     * Indicate that the model's email address should be unverified.
+     */
+    public function unverified(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'email_verified_at' => null,
+        ]);
+    }
+}
+
+
+/* ===== migrations\0001_01_01_000000_create_users_table.php ===== */
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('users', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->rememberToken();
+            $table->timestamps();
+        });
+
+        Schema::create('password_reset_tokens', function (Blueprint $table) {
+            $table->string('email')->primary();
+            $table->string('token');
+            $table->timestamp('created_at')->nullable();
+        });
+
+        Schema::create('sessions', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->foreignId('user_id')->nullable()->index();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->longText('payload');
+            $table->integer('last_activity')->index();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('users');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('sessions');
+    }
+};
+
+
+/* ===== migrations\0001_01_01_000001_create_cache_table.php ===== */
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('cache', function (Blueprint $table) {
+            $table->string('key')->primary();
+            $table->mediumText('value');
+            $table->integer('expiration');
+        });
+
+        Schema::create('cache_locks', function (Blueprint $table) {
+            $table->string('key')->primary();
+            $table->string('owner');
+            $table->integer('expiration');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('cache');
+        Schema::dropIfExists('cache_locks');
+    }
+};
+
+
+/* ===== migrations\0001_01_01_000002_create_jobs_table.php ===== */
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('jobs', function (Blueprint $table) {
+            $table->id();
+            $table->string('queue')->index();
+            $table->longText('payload');
+            $table->unsignedTinyInteger('attempts');
+            $table->unsignedInteger('reserved_at')->nullable();
+            $table->unsignedInteger('available_at');
+            $table->unsignedInteger('created_at');
+        });
+
+        Schema::create('job_batches', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->string('name');
+            $table->integer('total_jobs');
+            $table->integer('pending_jobs');
+            $table->integer('failed_jobs');
+            $table->longText('failed_job_ids');
+            $table->mediumText('options')->nullable();
+            $table->integer('cancelled_at')->nullable();
+            $table->integer('created_at');
+            $table->integer('finished_at')->nullable();
+        });
+
+        Schema::create('failed_jobs', function (Blueprint $table) {
+            $table->id();
+            $table->string('uuid')->unique();
+            $table->text('connection');
+            $table->text('queue');
+            $table->longText('payload');
+            $table->longText('exception');
+            $table->timestamp('failed_at')->useCurrent();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('jobs');
+        Schema::dropIfExists('job_batches');
+        Schema::dropIfExists('failed_jobs');
+    }
+};
+
+
+/* ===== migrations\2025_03_26_142803_create_kingexpressbus_schemas.php ===== */
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('slug')->unique();
+            $table->integer('count')->default(0);
+            $table->timestamps();
+        });
+
+        Schema::create('news', function (Blueprint $table) {
+            $table->id();
+            $table->string('slug')->unique();
+            $table->string('title');
+            $table->string('thumbnail');
+            $table->string('author');
+            $table->integer('view')->default(0);
+            $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
+            $table->longText('content');
+            $table->timestamps();
+        });
+
+        Schema::create('trainings', function (Blueprint $table) {
+            $table->id();
+            $table->string('slug')->unique();
+            $table->string('title');
+            $table->string('age');
+            $table->longText('description');
+            $table->string('thumbnail');
+            $table->string('duration');
+            $table->string('outcome');
+            $table->string('method');
+            $table->text('speaking');
+            $table->text('listening');
+            $table->text('reading');
+            $table->text('writing');
+            $table->text('curriculum')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('customers', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('training_id')->nullable()->constrained('trainings')->onDelete('set null');
+            $table->string('full_name_parent');
+            $table->string('phone', 10);
+            $table->string('email', 50);
+            $table->string('full_name_children');
+            $table->date('date_of_birth');
+            $table->text('address');
+            $table->longText('note')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('teachers', function (Blueprint $table) {
+            $table->id();
+            $table->string('full_name');
+            $table->string('role');
+            $table->text('qualifications');
+            $table->string('avatar');
+            $table->string('slug')->unique();
+            $table->string('facebook');
+            $table->string('email', 50)->unique();
+            $table->longText('description')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('home_page', function (Blueprint $table) {
+            $table->id();
+            $table->string('banners')->unique();
+            $table->text('stats')->nullable();
+            $table->text('fags')->nullable();
+            $table->text('images')->nullable();
+            $table->string('link_youtubes')->unique();
+            $table->timestamps();
+        });
+
+        Schema::create('contact', function (Blueprint $table) {
+            $table->id();
+            $table->longText('address');
+            $table->string('phone', 10);
+            $table->string('email', 50);
+            $table->string('facebook', 50);
+            $table->timestamps();
+        });
+
+        Schema::create('parents_corner', function (Blueprint $table) {
+            $table->id();
+            $table->longText('image');
+            $table->text('rate');
+            $table->string('name', 50);
+            $table->string('describe', 50);
+            $table->longText('content');
+            $table->timestamps();
+        });
+
+        Schema::create('document', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 50);
+            $table->text('src');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('categories');
+        Schema::dropIfExists('news');
+        Schema::dropIfExists('trainings');
+        Schema::dropIfExists('customers');
+        Schema::dropIfExists('teachers');
+    }
+};
+
+
+/* ===== seeders\DatabaseSeeder.php ===== */
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\User;
+
+// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    /**
+     * Seed the application's database.
+     */
+    public function run(): void
+    {
+        $this->call([
+            UserSeeder::class
+        ]);
+    }
+}
+
+
+/* ===== seeders\UserSeeder.php ===== */
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\User;
+use Faker\Factory as Faker;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+
+class UserSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        DB::table('users')->delete();
+        $countUser = DB::table('users')->get()->count();
+        if ($countUser < 1) {
+            User::insert([
+                'name' => "root",
+                'email' => "root@gmail.com",
+                'password' => bcrypt('root')
+            ]);
+        }
+
+        $faker = Faker::create();
+        $data = [];
+
+        for ($i = 0; $i < 10; $i++) {
+            $data[] = [
+                'name' => $faker->name(),
+                'email' => $faker->unique()->safeEmail(),
+                'password' => bcrypt('password'),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        DB::table('users')->insert($data);
+        echo "Seed User Success";
+        return;
+    }
+}
+
+
+
+/* ===== IGNORED FILES & DIRECTORIES ===== */
+/* The following items were excluded based on ignore rules */
+
+/* Ignored items list: */
+/* Ignored directories: */
+/*   .codebase/ */
