@@ -27,6 +27,9 @@
 
                 <x-inputs.text label="Tiêu đề" name="title" :value="old('title', $news?->title)" required/>
                 
+                {{-- ADDED: Thêm input cho excerpt --}}
+                <x-inputs.text-area label="Mô tả ngắn (Excerpt)" name="excerpt" :value="old('excerpt', $news?->excerpt)" required/>
+                
                 <x-inputs.image-link label="Ảnh đại diện (Thumbnail)" name="thumbnail" :value="old('thumbnail', $news?->thumbnail)" required/>
                 
                 <div class="row">

@@ -19,6 +19,7 @@ return new class extends Migration {
             $table->id();
             $table->string('slug')->unique();
             $table->string('title');
+            $table->text('excerpt');
             $table->string('thumbnail');
             $table->string('author');
             $table->integer('view')->default(0);

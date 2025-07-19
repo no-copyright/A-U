@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\KingExpressBus\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Traits\SlugGenerator; // <-- BƯỚC 1: Thêm Trait đã tạo
+use App\Http\Traits\SlugGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -12,7 +12,7 @@ use Illuminate\Http\JsonResponse;
 
 class NewsController extends Controller
 {
-    use SlugGenerator; // <-- BƯỚC 2: Sử dụng Trait trong Controller
+    use SlugGenerator;
 
     /**
      * Display a listing of the resource.
@@ -43,9 +43,10 @@ class NewsController extends Controller
      */
     public function store(Request $request)
     {
-        // Bỏ validation cho 'author'
+        // MODIFIED: Thêm 'excerpt' vào validation
         $validated = $request->validate([
-            'title' => 'required|string|max:255,title',
+            'title' => 'required|string|max:255|unique:news,title',
+            'excerpt' => 'required|string|max:500', // Giới hạn 500 ký tự
             'thumbnail' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'content' => 'required|string',
@@ -53,24 +54,23 @@ class NewsController extends Controller
 
         try {
             DB::transaction(function () use ($validated) {
-                // Tự động gán tác giả là "Admin"
                 $validated['author'] = 'Admin';
                 $validated['created_at'] = now();
                 $validated['updated_at'] = now();
-                
+
                 $validated['slug'] = Str::slug($validated['title']);
                 $id = DB::table('news')->insertGetId($validated);
-                
+
                 $finalSlug = $this->generateSlug($validated['title'], $id);
                 DB::table('news')->where('id', $id)->update(['slug' => $finalSlug]);
-                
+
                 DB::table('categories')->where('id', $validated['category_id'])->increment('count');
             });
         } catch (Throwable $e) {
-            return back()->with('error', 'Đã xảy ra lỗi khi tạo tin tức: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Error creating news: ' . $e->getMessage())->withInput();
         }
 
-        return redirect()->route('admin.news.index')->with('success', 'Tin tức đã được tạo thành công!');
+        return redirect()->route('admin.news.index')->with('success', 'News created successfully!');
     }
 
     /**
@@ -95,24 +95,24 @@ class NewsController extends Controller
         if (!$news) {
             abort(404);
         }
-        
+
         $old_category_id = $news->category_id;
 
-        // Bỏ validation cho 'author'
+        // MODIFIED: Thêm 'excerpt' vào validation
         $validated = $request->validate([
             'title' => 'required|string|max:255|unique:news,title,' . $id,
+            'excerpt' => 'required|string|max:500', // Giới hạn 500 ký tự
             'thumbnail' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'content' => 'required|string',
         ]);
-        
+
         try {
             DB::transaction(function () use ($validated, $news, $id, $old_category_id) {
                 if ($news->title !== $validated['title']) {
                     $validated['slug'] = $this->generateSlug($validated['title'], $id);
                 }
 
-                // Tự động gán tác giả là "Admin"
                 $validated['author'] = 'Admin';
                 $validated['updated_at'] = now();
 
@@ -124,10 +124,10 @@ class NewsController extends Controller
                 }
             });
         } catch (Throwable $e) {
-            return back()->with('error', 'Đã xảy ra lỗi khi cập nhật tin tức: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Error updating news: ' . $e->getMessage())->withInput();
         }
 
-        return redirect()->route('admin.news.index')->with('success', 'Tin tức đã được cập nhật thành công!');
+        return redirect()->route('admin.news.index')->with('success', 'News updated successfully!');
     }
 
     /**
@@ -137,49 +137,56 @@ class NewsController extends Controller
     {
         $news = DB::table('news')->find($id);
         if (!$news) {
-            return back()->with('error', 'Không tìm thấy tin tức để xóa.');
+            return back()->with('error', 'News item not found.');
         }
 
         try {
             DB::transaction(function () use ($news, $id) {
-                // 1. Xóa tin tức khỏi bảng 'news'
                 DB::table('news')->where('id', $id)->delete();
-
-                // 2. Giảm số lượng trong bảng 'categories'
-                // Đảm bảo rằng count không bao giờ âm
                 DB::table('categories')->where('id', $news->category_id)->where('count', '>', 0)->decrement('count');
             });
         } catch (Throwable $e) {
-            return back()->with('error', 'Đã xảy ra lỗi khi xóa tin tức: ' . $e->getMessage());
+            return back()->with('error', 'Error deleting news: ' . $e->getMessage());
         }
 
-        return redirect()->route('admin.news.index')->with('success', 'Tin tức đã được xóa thành công!');
+        return redirect()->route('admin.news.index')->with('success', 'News deleted successfully!');
     }
 
 
+    /**
+     * Get a paginated list of news, with optional searching by title.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function getNewsList(Request $request): JsonResponse
     {
-        // Bạn có thể tùy chỉnh số lượng item mỗi trang ở đây
-        $pageSize = $request->query('pageSize', 10); 
+        $pageSize = $request->query('pageSize', 10);
+        $search = $request->query('search');
 
-        // Sử dụng paginate() của Laravel để tự động xử lý phân trang
-        $paginator = DB::table('news')
+        $query = DB::table('news')
             ->join('categories', 'news.category_id', '=', 'categories.id')
             ->select(
                 'news.id',
                 'news.title',
                 'news.slug',
+                'news.excerpt', // <--- THÊM DÒNG NÀY
                 'news.thumbnail',
                 'news.author',
                 'news.view',
                 'news.created_at',
                 'categories.name as category_name',
                 'categories.slug as category_slug'
-            )
-            ->orderBy('news.created_at', 'desc')
-            ->paginate($pageSize);
-            
-        // Chuyển đổi collection data để có URL đầy đủ cho thumbnail
+            );
+
+        if ($search) {
+            $query->where('news.title', 'like', '%' . $search . '%');
+        }
+
+        $paginator = $query->orderBy('news.created_at', 'desc')
+            ->paginate($pageSize)
+            ->appends($request->query());
+
         $transformedNews = $paginator->getCollection()->map(function ($newsItem) {
             if (!empty($newsItem->thumbnail)) {
                 $newsItem->thumbnail = url($newsItem->thumbnail);
@@ -187,7 +194,6 @@ class NewsController extends Controller
             return $newsItem;
         });
 
-        // Xây dựng cấu trúc response cuối cùng theo đúng yêu cầu
         return response()->json([
             'success' => true,
             'currentPage' => $paginator->currentPage(),
@@ -198,21 +204,25 @@ class NewsController extends Controller
         ]);
     }
 
-
-
+    /**
+     * Get the details of a single news item by its slug.
+     *
+     * @param string $slug
+     * @return JsonResponse
+     */
     public function getNewsDetailBySlug(string $slug): JsonResponse
     {
-        // Tìm bài viết theo slug
         $news = DB::table('news')
             ->join('categories', 'news.category_id', '=', 'categories.id')
             ->select(
                 'news.id',
                 'news.title',
                 'news.slug',
+                'news.excerpt', // <--- THÊM DÒNG NÀY
                 'news.thumbnail',
                 'news.author',
                 'news.view',
-                'news.content', // Lấy thêm trường nội dung
+                'news.content',
                 'news.created_at',
                 'news.updated_at',
                 'categories.name as category_name',
@@ -221,7 +231,6 @@ class NewsController extends Controller
             ->where('news.slug', $slug)
             ->first();
 
-        // Nếu không tìm thấy, trả về lỗi 404
         if (!$news) {
             return response()->json([
                 'success' => false,
@@ -229,18 +238,13 @@ class NewsController extends Controller
             ], 404);
         }
 
-        // Tăng lượt xem (view count) của bài viết lên 1
         DB::table('news')->where('id', $news->id)->increment('view');
-
-        // Cập nhật lại số view trong đối tượng trả về
         $news->view += 1;
-        
-        // Chuyển đổi URL cho thumbnail
+
         if (!empty($news->thumbnail)) {
             $news->thumbnail = url($news->thumbnail);
         }
 
-        // Trả về dữ liệu chi tiết
         return response()->json([
             'success' => true,
             'data' => $news

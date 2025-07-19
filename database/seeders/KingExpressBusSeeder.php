@@ -101,6 +101,7 @@ class KingExpressBusSeeder extends Seeder
             $newsItems[] = [
                 'title'       => $title,
                 'slug'        => Str::slug($title),
+                'excerpt'     => $faker->paragraph(2), // <--- THÊM DÒNG NÀY
                 'thumbnail'   => $faker->randomElement($sampleThumbnails),
                 'author'      => 'Admin',
                 'view'        => $faker->numberBetween(50, 2000),

@@ -99,7 +99,7 @@ class CategoryController extends Controller
 
         return redirect()->route('admin.categories.index')->with('success', 'Danh mục đã được cập nhật thành công!');
     }
-    
+
     // ... (Phương thức destroy không thay đổi)
     public function destroy(string $id)
     {
@@ -132,10 +132,10 @@ class CategoryController extends Controller
     }
 
 
-        public function getNewsByCategorySlug(Request $request, string $categorySlug): JsonResponse
+    public function getNewsByCategorySlug(Request $request, string $categorySlug): JsonResponse
     {
         $category = DB::table('categories')->where('slug', $categorySlug)->first();
-        
+
         if (!$category) {
             return response()->json([
                 'success' => false,
@@ -166,7 +166,7 @@ class CategoryController extends Controller
             }
             return $newsItem;
         });
-        
+
         return response()->json([
             'success' => true,
             'category' => [

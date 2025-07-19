@@ -19,8 +19,8 @@
                     <th>ID</th>
                     <th>Tiêu đề</th>
                     <th>Ảnh đại diện</th>
+                    <th>Mô tả ngắn</th> {{-- <-- MODIFIED --}}
                     <th>Danh mục</th>
-                    <th>Tác giả</th>
                     <th>Lượt xem</th>
                     <th>Hành động</th>
                 </tr>
@@ -36,8 +36,8 @@
                             style="max-width: 100px; max-height: 100px;">
                         @endif
                     </td>
+                    <td>{{ Str::limit($item->excerpt, 100) }}</td> {{-- <-- MODIFIED --}}
                     <td>{{ $item->category_name ?? 'N/A' }}</td>
-                    <td>{{ $item->author }}</td>
                     <td>{{ $item->view }}</td>
                     <td>
                         <a class="btn btn-warning btn-sm"
