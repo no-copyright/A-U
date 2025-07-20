@@ -56,9 +56,9 @@ class KingExpressBusSeeder extends Seeder
         $faker = Faker::create('vi_VN');
         $categories = [];
         $categoryNames = [
-            'Hoạt động ngoại khóa', 'Sự kiện nổi bật', 'Góc chia sẻ kinh nghiệm',
-            'Thông báo từ trung tâm', 'Lịch khai giảng', 'Ưu đãi học phí',
-            'Phương pháp học tập hiệu quả', 'Cảm nhận học viên', 'Câu chuyện thành công'
+            'Hoạt động', 'Sự kiện', 'Kinh nghiệm',
+            'Thông báo',
+            'Kiến thức và kinh nghiệm' // <-- DÒNG ĐƯỢC THÊM VÀO
         ];
 
         foreach ($categoryNames as $name) {
@@ -84,7 +84,6 @@ class KingExpressBusSeeder extends Seeder
     private function seedNews()
     {
         $faker = Faker::create('vi_VN');
-        $categoryIds = DB::table('categories')->pluck('id');
         $newsItems = [];
 
         $sampleThumbnails = [
@@ -94,24 +93,51 @@ class KingExpressBusSeeder extends Seeder
             'userfiles/images/R5AT3875.jpg',
         ];
 
-        for ($i = 0; $i < 20; $i++) {
+        // Lấy ID của category "Kiến thức và kinh nghiệm"
+        $knowledgeCategory = DB::table('categories')->where('name', 'Kiến thức và kinh nghiệm')->first();
+        $knowledgeCategoryId = $knowledgeCategory ? $knowledgeCategory->id : null;
+
+        // Tạo 6 bài viết cho category "Kiến thức và kinh nghiệm"
+        if ($knowledgeCategoryId) {
+            for ($i = 0; $i < 6; $i++) {
+                $title = "Kiến thức " . $faker->unique()->sentence(5);
+                $newsItems[] = [
+                    'title'       => $title,
+                    'slug'        => Str::slug($title),
+                    'excerpt'     => $faker->paragraph(2),
+                    'thumbnail'   => $faker->randomElement($sampleThumbnails),
+                    'author'      => 'Admin',
+                    'view'        => $faker->numberBetween(100, 3000),
+                    'category_id' => $knowledgeCategoryId,
+                    'content'     => '<h2>' . $faker->sentence(4) . '</h2><p>' . $faker->paragraphs(3, true) . '</p><blockquote>' . $faker->sentence(10) . '</blockquote><p>' . $faker->paragraphs(4, true) . '</p>',
+                    'created_at'  => now()->subDays($i),
+                    'updated_at'  => now()->subDays($i),
+                ];
+            }
+            DB::table('categories')->where('id', $knowledgeCategoryId)->increment('count', 6);
+        }
+
+        // Tạo thêm các bài viết ngẫu nhiên cho các category khác
+        $otherCategoryIds = DB::table('categories')->where('name', '!=', 'Kiến thức và kinh nghiệm')->pluck('id');
+        for ($i = 0; $i < 14; $i++) { // Giảm số lượng để tổng số bài viết vẫn là 20
             $title = $faker->unique()->sentence(6);
-            $categoryId = $faker->randomElement($categoryIds);
+            $categoryId = $faker->randomElement($otherCategoryIds);
 
             $newsItems[] = [
                 'title'       => $title,
                 'slug'        => Str::slug($title),
-                'excerpt'     => $faker->paragraph(2), // <--- THÊM DÒNG NÀY
+                'excerpt'     => $faker->paragraph(2),
                 'thumbnail'   => $faker->randomElement($sampleThumbnails),
                 'author'      => 'Admin',
                 'view'        => $faker->numberBetween(50, 2000),
                 'category_id' => $categoryId,
                 'content'     => '<h2>' . $faker->sentence(4) . '</h2><p>' . $faker->paragraphs(3, true) . '</p><blockquote>' . $faker->sentence(10) . '</blockquote><p>' . $faker->paragraphs(4, true) . '</p>',
-                'created_at'  => now()->subDays($i),
-                'updated_at'  => now()->subDays($i),
+                'created_at'  => now()->subDays($i + 6), // Tiếp tục lùi ngày
+                'updated_at'  => now()->subDays($i + 6),
             ];
             DB::table('categories')->where('id', $categoryId)->increment('count');
         }
+
         DB::table('news')->insert($newsItems);
 
         $allNews = DB::table('news')->get();
@@ -261,8 +287,8 @@ class KingExpressBusSeeder extends Seeder
         $faker = Faker::create('vi_VN');
         $docs = [];
         $sampleFiles = [
-            'userfiles/files/tai-lieu-1.pdf', 'userfiles/files/brochure.docx',
-            'userfiles/files/thoi-khoa-bieu.xlsx', 'userfiles/files/presentation.pptx',
+            'userfiles/files/file-thong-tin-va-mau-thiet-ke.pdf', 'userfiles/files/file-thong-tin-va-mau-thiet-ke.pdf',
+            'userfiles/files/file-thong-tin-va-mau-thiet-ke.pdf', 'userfiles/files/file-thong-tin-va-mau-thiet-ke.pdf',
         ];
 
         for ($i = 0; $i < 10; $i++) {
@@ -302,7 +328,7 @@ class KingExpressBusSeeder extends Seeder
                 'userfiles/images/R5AT4259.jpg', 'userfiles/images/R5AT4262.jpg', 'userfiles/images/R5AT4264.jpg',
                 'userfiles/images/R5AT4267.jpg', 'userfiles/images/R5AT4270.jpg',
             ]),
-            'link_youtubes' => json_encode(['https://www.youtube.com/watch?v=example1', 'https://www.youtube.com/watch?v=example2']),
+            'link_youtubes' => json_encode(['https://youtu.be/fXXcJJENN9U', 'https://youtu.be/BaR4iCqJFWk', 'https://youtu.be/KNnGaIwnI0g', 'https://youtu.be/N2KAoRPxXvc']),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -313,12 +339,16 @@ class KingExpressBusSeeder extends Seeder
         DB::table('contact')->insert([
             'id' => 1,
             'address' => json_encode([
-                ['address' => '123 Đường ABC, Phường X, Quận Y, TP. Hồ Chí Minh', 'googlemap' => 'https://maps.google.com/'],
-                ['address' => '456 Đường DEF, Phường A, Quận B, TP. Hà Nội', 'googlemap' => 'https://maps.google.com/'],
+                ['address' => '123 Đường ABC, Phường X, Quận Y, TP. Hồ Chí Minh', 'googlemap' => '<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3725.301142686734!2d105.78657997476799!3d20.980562389433196!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ade83ba9e115%3A0x6f4fdb5e1e9e39ed!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBLaeG6v24gdHLDumMgSMOgIE7hu5lp!5e0!3m2!1svi!2s!4v1752984942798!5m2!1svi!2s" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'],
+                ['address' => '456 Đường DEF, Phường A, Quận B, TP. Hà Nội', 'googlemap' => '<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3725.301142686734!2d105.78657997476799!3d20.980562389433196!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ade83ba9e115%3A0x6f4fdb5e1e9e39ed!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBLaeG6v24gdHLDumMgSMOgIE7hu5lp!5e0!3m2!1svi!2s!4v1752984942798!5m2!1svi!2s" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'],
+                ['address' => '456 Đường DEF, Phường A, Quận B, TP. Hà Nội', 'googlemap' => '<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3725.301142686734!2d105.78657997476799!3d20.980562389433196!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ade83ba9e115%3A0x6f4fdb5e1e9e39ed!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBLaeG6v24gdHLDumMgSMOgIE7hu5lp!5e0!3m2!1svi!2s!4v1752984942798!5m2!1svi!2s" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'],
+                ['address' => '456 Đường DEF, Phường A, Quận B, TP. Hà Nội', 'googlemap' => '<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3725.301142686734!2d105.78657997476799!3d20.980562389433196!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ade83ba9e115%3A0x6f4fdb5e1e9e39ed!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBLaeG6v24gdHLDumMgSMOgIE7hu5lp!5e0!3m2!1svi!2s!4v1752984942798!5m2!1svi!2s" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'],
+                ['address' => '456 Đường DEF, Phường A, Quận B, TP. Hà Nội', 'googlemap' => '<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3725.301142686734!2d105.78657997476799!3d20.980562389433196!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ade83ba9e115%3A0x6f4fdb5e1e9e39ed!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBLaeG6v24gdHLDumMgSMOgIE7hu5lp!5e0!3m2!1svi!2s!4v1752984942798!5m2!1svi!2s" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'],
+                ['address' => '456 Đường DEF, Phường A, Quận B, TP. Hà Nội', 'googlemap' => '<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3725.301142686734!2d105.78657997476799!3d20.980562389433196!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ade83ba9e115%3A0x6f4fdb5e1e9e39ed!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBLaeG6v24gdHLDumMgSMOgIE7hu5lp!5e0!3m2!1svi!2s!4v1752984942798!5m2!1svi!2s" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>'],
             ]),
             'phone' => '0987654321',
-            'email' => 'contact@kingexpressbus.com',
-            'facebook' => 'https://facebook.com/kingexpressbus',
+            'email' => 'contact@a&u.com',
+            'facebook' => 'https://facebook.com/a&u',
             'created_at' => now(),
             'updated_at' => now(),
         ]);

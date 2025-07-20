@@ -41,7 +41,7 @@ Route::prefix('admin')->name("admin.")->middleware(AuthenticationMiddleware::cla
     // Contact Page Management
     Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
     Route::post('/contact/update', [ContactController::class, 'update'])->name('contact.update');
-    
+
     // CRUD Resources
     Route::resource("categories", CategoryController::class)->except(['show']);
     Route::resource("news", NewsController::class)->except(['show']);
@@ -49,7 +49,7 @@ Route::prefix('admin')->name("admin.")->middleware(AuthenticationMiddleware::cla
     Route::resource("teachers", TeacherController::class)->except(['show']);
     Route::resource("parents-corner", ParentsCornerController::class)->except(['show']);
     Route::resource("documents", DocumentController::class)->except(['show']);
-    
+
     // Customer Routes (with custom status update)
     Route::resource("customers", CustomerController::class)->only(['index', 'show', 'destroy']);
     Route::post("customers/{customer}/update-status", [CustomerController::class, 'updateStatus'])->name('customers.updateStatus');
@@ -68,13 +68,14 @@ Route::group(['prefix' => 'ckfinder', 'middleware' => ['web']], function () {
 | API Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('api')->group(function() {
+Route::prefix('api')->group(function () {
     // Homepage
     Route::get('/homepage', [AdminController::class, 'getHomePageApi']);
 
     // Categories & News
     Route::get('/categories', [CategoryController::class, 'getCategories']);
     Route::get('/categories/{categorySlug}/news', [CategoryController::class, 'getNewsByCategorySlug']);
+    Route::get('/knowledge-news', [NewsController::class, 'getKnowledgeNewsApi']);
     Route::get('/news', [NewsController::class, 'getNewsList']);
     Route::get('/news/{slug}', [NewsController::class, 'getNewsDetailBySlug']);
 
@@ -88,7 +89,7 @@ Route::prefix('api')->group(function() {
     // Teachers
     Route::get('/teachers', [TeacherController::class, 'getTeacherListApi']);
     Route::get('/teachers/{slug}', [TeacherController::class, 'getTeacherDetailApi']);
-    
+
     // Contact
     Route::get('/contact', [ContactController::class, 'getContactApi']);
 

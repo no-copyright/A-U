@@ -158,6 +158,7 @@ class CategoryController extends Controller
                 'slug',
                 'thumbnail',
                 'author',
+                'excerpt',
                 'view',
                 'created_at'
             )

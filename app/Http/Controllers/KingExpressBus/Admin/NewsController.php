@@ -14,30 +14,21 @@ class NewsController extends Controller
 {
     use SlugGenerator;
 
-    /**
-     * Display a listing of the resource.
-     */
-
-    public function index(Request $request) // Thêm Request $request
+    public function index(Request $request)
     {
         $query = DB::table('news')
             ->leftJoin('categories', 'news.category_id', '=', 'categories.id')
             ->select('news.*', 'categories.name as category_name');
 
-        // *** THÊM MỚI: Logic tìm kiếm theo tiêu đề ***
         if ($request->filled('search')) {
             $query->where('news.title', 'like', '%' . $request->input('search') . '%');
         }
 
-        // *** THAY ĐỔI: Sắp xếp và phân trang ***
         $newsItems = $query->orderBy('news.created_at', 'desc')->paginate(10);
 
         return view('kingexpressbus.admin.modules.news.index', compact('newsItems'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $news = null;
@@ -45,15 +36,11 @@ class NewsController extends Controller
         return view('kingexpressbus.admin.modules.news.createOrEdit', compact('news', 'categories'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        // MODIFIED: Thêm 'excerpt' vào validation
         $validated = $request->validate([
             'title' => 'required|string|max:255|unique:news,title',
-            'excerpt' => 'required|string|max:500', // Giới hạn 500 ký tự
+            'excerpt' => 'required|string|max:500',
             'thumbnail' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'content' => 'required|string',
@@ -80,9 +67,6 @@ class NewsController extends Controller
         return redirect()->route('admin.news.index')->with('success', 'News created successfully!');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
         $news = DB::table('news')->find($id);
@@ -93,9 +77,6 @@ class NewsController extends Controller
         return view('kingexpressbus.admin.modules.news.createOrEdit', compact('news', 'categories'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $news = DB::table('news')->find($id);
@@ -105,10 +86,9 @@ class NewsController extends Controller
 
         $old_category_id = $news->category_id;
 
-        // MODIFIED: Thêm 'excerpt' vào validation
         $validated = $request->validate([
             'title' => 'required|string|max:255|unique:news,title,' . $id,
-            'excerpt' => 'required|string|max:500', // Giới hạn 500 ký tự
+            'excerpt' => 'required|string|max:500',
             'thumbnail' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'content' => 'required|string',
@@ -137,9 +117,6 @@ class NewsController extends Controller
         return redirect()->route('admin.news.index')->with('success', 'News updated successfully!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $news = DB::table('news')->find($id);
@@ -159,13 +136,6 @@ class NewsController extends Controller
         return redirect()->route('admin.news.index')->with('success', 'News deleted successfully!');
     }
 
-
-    /**
-     * Get a paginated list of news, with optional searching by title.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function getNewsList(Request $request): JsonResponse
     {
         $pageSize = $request->query('pageSize', 10);
@@ -177,7 +147,7 @@ class NewsController extends Controller
                 'news.id',
                 'news.title',
                 'news.slug',
-                'news.excerpt', // <--- THÊM DÒNG NÀY
+                'news.excerpt',
                 'news.thumbnail',
                 'news.author',
                 'news.view',
@@ -211,12 +181,6 @@ class NewsController extends Controller
         ]);
     }
 
-    /**
-     * Get the details of a single news item by its slug.
-     *
-     * @param string $slug
-     * @return JsonResponse
-     */
     public function getNewsDetailBySlug(string $slug): JsonResponse
     {
         $news = DB::table('news')
@@ -225,7 +189,7 @@ class NewsController extends Controller
                 'news.id',
                 'news.title',
                 'news.slug',
-                'news.excerpt', // <--- THÊM DÒNG NÀY
+                'news.excerpt',
                 'news.thumbnail',
                 'news.author',
                 'news.view',
@@ -255,6 +219,56 @@ class NewsController extends Controller
         return response()->json([
             'success' => true,
             'data' => $news
+        ]);
+    }
+
+    public function getKnowledgeNewsApi(Request $request): JsonResponse
+    {
+        $knowledgeCategory = DB::table('categories')->where('name', 'Kiến thức và kinh nghiệm')->first();
+
+        if (!$knowledgeCategory) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Category "Kiến thức và kinh nghiệm" not found. Please run the seeder.'
+            ], 404);
+        }
+
+        $pageSize = $request->query('pageSize', 6);
+
+        $paginator = DB::table('news')
+            ->where('category_id', $knowledgeCategory->id)
+            ->select(
+                'id',
+                'title',
+                'slug',
+                'thumbnail',
+                'excerpt',
+                'author',
+                'view',
+                'created_at'
+            )
+            ->orderBy('created_at', 'desc')
+            ->paginate($pageSize);
+
+        $transformedNews = $paginator->getCollection()->map(function ($newsItem) {
+            if (!empty($newsItem->thumbnail)) {
+                $newsItem->thumbnail = url($newsItem->thumbnail);
+            }
+            return $newsItem;
+        });
+
+        return response()->json([
+            'success' => true,
+            'category' => [
+                'id' => $knowledgeCategory->id,
+                'name' => $knowledgeCategory->name,
+                'slug' => $knowledgeCategory->slug,
+            ],
+            'currentPage' => $paginator->currentPage(),
+            'totalPages' => $paginator->lastPage(),
+            'totalElements' => $paginator->total(),
+            'pageSize' => $paginator->perPage(),
+            'data' => $transformedNews,
         ]);
     }
 }
