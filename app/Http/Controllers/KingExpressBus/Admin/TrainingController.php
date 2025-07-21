@@ -8,21 +8,20 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
 
 class TrainingController extends Controller
 {
     use SlugGenerator;
 
-    public function index(Request $request) // Thêm Request
+    public function index(Request $request)
     {
         $query = DB::table('trainings');
 
-        // Thêm logic tìm kiếm
         if ($request->filled('search')) {
             $query->where('title', 'like', '%' . $request->input('search') . '%');
         }
 
-        // Sắp xếp và phân trang
         $trainings = $query->orderBy('priority', 'asc')->orderBy('title', 'asc')->paginate(10);
 
         return view('kingexpressbus.admin.modules.training.index', compact('trainings'));
@@ -36,8 +35,17 @@ class TrainingController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255,title',
+        // Lọc bỏ các học phần rỗng trước khi validate
+        $curriculum = $request->input('curriculum', []);
+        if (is_array($curriculum)) {
+            $curriculum = array_filter($curriculum, function ($item) {
+                return !empty($item['module']) && !empty($item['content']);
+            });
+            $request->merge(['curriculum' => array_values($curriculum)]);
+        }
+
+        $rules = [
+            'title' => 'required|string|max:255|unique:trainings,title',
             'priority' => 'required|integer|min:0',
             'age' => 'required|string|max:255',
             'description' => 'required|string',
@@ -49,14 +57,40 @@ class TrainingController extends Controller
             'listening' => 'required|string',
             'reading' => 'required|string',
             'writing' => 'required|string',
+            'content' => 'nullable|string',
+            'images' => 'nullable|array',
             'curriculum' => 'nullable|array',
-            'curriculum.*.module' => 'required_with:curriculum|string|max:255',
-            'curriculum.*.content' => 'required_with:curriculum|string',
+            'curriculum.*.module' => 'required|string|max:255',
+            'curriculum.*.content' => 'required|string',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        $validator->setAttributeNames([
+            'title' => 'tiêu đề khóa học',
+            'priority' => 'độ ưu tiên',
+            'age' => 'độ tuổi',
+            'description' => 'mô tả ngắn',
+            'thumbnail' => 'ảnh đại diện',
+            'duration' => 'thời lượng',
+            'outcome' => 'kết quả đầu ra',
+            'method' => 'phương pháp giảng dạy',
+            'speaking' => 'kỹ năng Speaking',
+            'listening' => 'kỹ năng Listening',
+            'reading' => 'kỹ năng Reading',
+            'writing' => 'kỹ năng Writing',
+            'curriculum.*.module' => 'tên học phần',
+            'curriculum.*.content' => 'nội dung học phần',
         ]);
 
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $validated = $validator->validated();
         $validated['created_at'] = now();
         $validated['updated_at'] = now();
-
+        $validated['images'] = json_encode($request->input('images', []));
         $validated['curriculum'] = json_encode($request->input('curriculum', []));
 
         $validated['slug'] = Str::slug($validated['title']);
@@ -68,6 +102,7 @@ class TrainingController extends Controller
         return redirect()->route('admin.training.index')->with('success', 'Khoá đào tạo đã được tạo thành công!');
     }
 
+
     public function edit(string $id)
     {
         $training = DB::table('trainings')->find($id);
@@ -75,6 +110,7 @@ class TrainingController extends Controller
             abort(404);
         }
 
+        $training->images = json_decode($training->images, true) ?? [];
         $training->curriculum = json_decode($training->curriculum, true) ?? [];
 
         return view('kingexpressbus.admin.modules.training.createOrEdit', compact('training'));
@@ -87,7 +123,16 @@ class TrainingController extends Controller
             abort(404);
         }
 
-        $validated = $request->validate([
+        // Lọc bỏ các học phần rỗng trước khi validate
+        $curriculum = $request->input('curriculum', []);
+        if (is_array($curriculum)) {
+            $curriculum = array_filter($curriculum, function ($item) {
+                return !empty($item['module']) && !empty($item['content']);
+            });
+            $request->merge(['curriculum' => array_values($curriculum)]);
+        }
+
+        $rules = [
             'title' => 'required|string|max:255|unique:trainings,title,' . $id,
             'priority' => 'required|integer|min:0',
             'age' => 'required|string|max:255',
@@ -100,15 +145,43 @@ class TrainingController extends Controller
             'listening' => 'required|string',
             'reading' => 'required|string',
             'writing' => 'required|string',
+            'content' => 'nullable|string',
+            'images' => 'nullable|array',
             'curriculum' => 'nullable|array',
-            'curriculum.*.module' => 'required_with:curriculum|string|max:255',
-            'curriculum.*.content' => 'required_with:curriculum|string',
+            'curriculum.*.module' => 'required|string|max:255',
+            'curriculum.*.content' => 'required|string',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        $validator->setAttributeNames([
+            'title' => 'tiêu đề khóa học',
+            'priority' => 'độ ưu tiên',
+            'age' => 'độ tuổi',
+            'description' => 'mô tả ngắn',
+            'thumbnail' => 'ảnh đại diện',
+            'duration' => 'thời lượng',
+            'outcome' => 'kết quả đầu ra',
+            'method' => 'phương pháp giảng dạy',
+            'speaking' => 'kỹ năng Speaking',
+            'listening' => 'kỹ năng Listening',
+            'reading' => 'kỹ năng Reading',
+            'writing' => 'kỹ năng Writing',
+            'curriculum.*.module' => 'tên học phần',
+            'curriculum.*.content' => 'nội dung học phần',
         ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $validated = $validator->validated();
 
         if ($training->title !== $validated['title']) {
             $validated['slug'] = $this->generateSlug($validated['title'], $id);
         }
 
+        $validated['images'] = json_encode($request->input('images', []));
         $validated['curriculum'] = json_encode($request->input('curriculum', []));
         $validated['updated_at'] = now();
 
@@ -171,6 +244,13 @@ class TrainingController extends Controller
 
         if (!empty($training->thumbnail)) {
             $training->thumbnail = url($training->thumbnail);
+        }
+
+        $training->images = json_decode($training->images, true) ?? [];
+        if (!empty($training->images) && is_array($training->images)) {
+            $training->images = array_map(function ($path) {
+                return url($path);
+            }, $training->images);
         }
 
         $training->curriculum = json_decode($training->curriculum, true) ?? [];

@@ -299,11 +299,11 @@
                 </div>
                 <div class="contact-item">
                     <span class="contact-label">Hotline:</span>
-                    <span class="contact-value"><a href="tel:[Số điện thoại của trung tâm]" class="contact-link">[Số điện thoại của trung tâm]</a></span>
+                    <span class="contact-value"><a href="tel:098.xxx.xxxx" class="contact-link">098.xxx.xxxx</a></span>
                 </div>
                 <div class="contact-item">
                     <span class="contact-label">Email:</span>
-                    <span class="contact-value"><a href="mailto:[Email của trung tâm]" class="contact-link">[Email của trung tâm]</a></span>
+                    <span class="contact-value"><a href="mailto:info@aucenter.com" class="contact-link">info@aucenter.com</a></span>
                 </div>
                 <div class="contact-item">
                     <span class="contact-label">Giờ làm việc:</span>

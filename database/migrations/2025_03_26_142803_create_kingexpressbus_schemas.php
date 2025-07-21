@@ -43,6 +43,8 @@ return new class extends Migration {
             $table->text('listening');
             $table->text('reading');
             $table->text('writing');
+            $table->longText('content')->nullable();
+            $table->text('images')->nullable();
             $table->longText('curriculum')->nullable();
             $table->timestamps();
         });
@@ -100,7 +102,7 @@ return new class extends Migration {
             $table->string('slug')->unique();
             $table->longText('image');
             $table->text('rate');
-            $table->string('name', 50);
+            $table->string('name');
             $table->string('describe', 50);
             $table->longText('content');
             $table->timestamps();
