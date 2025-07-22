@@ -35,7 +35,6 @@ class TrainingController extends Controller
 
     public function store(Request $request)
     {
-        // Lọc bỏ các học phần rỗng trước khi validate
         $curriculum = $request->input('curriculum', []);
         if (is_array($curriculum)) {
             $curriculum = array_filter($curriculum, function ($item) {
@@ -62,6 +61,7 @@ class TrainingController extends Controller
             'curriculum' => 'nullable|array',
             'curriculum.*.module' => 'required|string|max:255',
             'curriculum.*.content' => 'required|string',
+            'youtube_review_link' => 'nullable|url|max:255',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -81,6 +81,7 @@ class TrainingController extends Controller
             'writing' => 'kỹ năng Writing',
             'curriculum.*.module' => 'tên học phần',
             'curriculum.*.content' => 'nội dung học phần',
+            'youtube_review_link' => 'link YouTube review',
         ]);
 
         if ($validator->fails()) {
@@ -123,7 +124,6 @@ class TrainingController extends Controller
             abort(404);
         }
 
-        // Lọc bỏ các học phần rỗng trước khi validate
         $curriculum = $request->input('curriculum', []);
         if (is_array($curriculum)) {
             $curriculum = array_filter($curriculum, function ($item) {
@@ -150,6 +150,7 @@ class TrainingController extends Controller
             'curriculum' => 'nullable|array',
             'curriculum.*.module' => 'required|string|max:255',
             'curriculum.*.content' => 'required|string',
+            'youtube_review_link' => 'nullable|url|max:255',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -169,6 +170,7 @@ class TrainingController extends Controller
             'writing' => 'kỹ năng Writing',
             'curriculum.*.module' => 'tên học phần',
             'curriculum.*.content' => 'nội dung học phần',
+            'youtube_review_link' => 'link YouTube review',
         ]);
 
         if ($validator->fails()) {
@@ -212,7 +214,7 @@ class TrainingController extends Controller
         $pageSize = $request->query('pageSize', 10);
 
         $paginator = DB::table('trainings')
-            ->select('id', 'title', 'slug', 'age', 'description', 'thumbnail', 'duration')
+            ->select('id', 'title', 'slug', 'age', 'description', 'thumbnail', 'duration', 'youtube_review_link')
             ->orderBy('priority', 'asc')
             ->orderBy('title', 'asc')
             ->paginate($pageSize);

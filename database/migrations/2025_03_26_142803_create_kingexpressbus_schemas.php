@@ -46,6 +46,7 @@ return new class extends Migration {
             $table->longText('content')->nullable();
             $table->text('images')->nullable();
             $table->longText('curriculum')->nullable();
+            $table->text('youtube_review_link')->nullable();
             $table->timestamps();
         });
 

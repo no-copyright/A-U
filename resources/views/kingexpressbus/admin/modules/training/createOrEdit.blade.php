@@ -76,6 +76,7 @@ $curriculumItems = old('curriculum', $training?->curriculum ?? []);
             <h4>Nội dung và hình ảnh chi tiết</h4>
             <x-inputs.editor label="Nội dung chi tiết khóa học" name="content" :value="old('content', $training?->content)" />
             <x-inputs.image-link-array label="Thư viện ảnh khóa học" name="images" :value="old('images', $training?->images ?? [])" />
+            <x-inputs.text label="Link YouTube Review" name="youtube_review_link" :value="old('youtube_review_link', $training?->youtube_review_link)" />
 
             <hr>
             {{-- CHƯƠNG TRÌNH HỌC (CẤU TRÚC TÙY CHỈNH) --}}
